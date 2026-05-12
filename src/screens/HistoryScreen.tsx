@@ -57,6 +57,7 @@ export default function HistoryScreen({ route, navigation }: any) {
     } catch (e) {}
 
     const title = type === 'medicine' ? data.medicine_name : data.report_type;
+    const strength = type === 'medicine' ? data.strength : null;
     const sub = type === 'medicine' ? data.simple_description : data.simple_verdict;
     const date = dayjs(item.created_at).format('DD MMM YYYY, hh:mm A');
     
@@ -70,7 +71,14 @@ export default function HistoryScreen({ route, navigation }: any) {
         <Image source={{ uri: item.image_path }} style={styles.thumb} />
         <View style={styles.cardInfo}>
           <View style={styles.cardHeader}>
-            <Text style={styles.title} numberOfLines={1}>{title || 'Unknown'}</Text>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.title} numberOfLines={1}>{title || 'Unknown'}</Text>
+              {strength && (
+                <View style={styles.strengthBadge}>
+                  <Text style={styles.strengthText}>{strength}</Text>
+                </View>
+              )}
+            </View>
             {isSaved && (
               <View style={[styles.badge, { backgroundColor: type === 'medicine' ? colors.primaryLight : colors.successLight }]}>
                 <Text style={[styles.badgeText, { color: type === 'medicine' ? colors.primary : colors.success }]}>
@@ -146,8 +154,10 @@ const styles = StyleSheet.create({
   thumb: { width: 60, height: 60, borderRadius: borderRadius.md, backgroundColor: colors.background },
   cardInfo: { flex: 1, gap: 4 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  title: { ...typography.bodyLarge, fontWeight: '700', color: colors.textPrimary, flex: 1 },
-  subtitle: { ...typography.caption, color: colors.textSecondary },
+  title: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  strengthBadge: { backgroundColor: colors.background, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: colors.border },
+  strengthText: { fontSize: 10, fontWeight: '700', color: colors.primary },
+  subtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 },
   date: { ...typography.tiny, color: colors.textMuted, marginTop: 2 },
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   badgeText: { fontSize: 10, fontWeight: '700' },

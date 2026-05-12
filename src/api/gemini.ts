@@ -98,6 +98,8 @@ Respond ONLY in valid JSON (no markdown):
   "how_to_take": "before_food or after_food or with_food or anytime",
   "drug_interactions": "any interactions with the patient's current medicines, or null",
   "identified_confidence": "high or medium or low",
+  "medicine_form": "tablet or capsule or syrup or injection or cream or drops or powder or patch or other",
+  "strength": "e.g. 500mg, 10ml, etc. or null",
   "category": "antibiotic or painkiller or diabetes or bp or thyroid or vitamin or other"
 }
 

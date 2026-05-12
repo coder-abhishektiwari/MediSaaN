@@ -224,6 +224,7 @@ export default function QuickScanScreen({ navigation }: any) {
   const [frameState, setFrameState]           = useState<FrameState>('empty');
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
   const [isAlreadyInSchedule, setIsAlreadyInSchedule] = useState(false);
+  const [currentScanUri, setCurrentScanUri] = useState<string | null>(null);
   const isScanningRef = useRef(false);
 
   // Turn camera off when a result is showing or detailed modal is open
@@ -266,7 +267,20 @@ export default function QuickScanScreen({ navigation }: any) {
       setScanStatus('Medicine detected');
       TTSService.speak(data.simple_description || data.medicine_name);
       if (patient.id) {
+        // Duplicate detection: Remove old scan if same name and strength
+        const history = getScanHistory(patient.id);
+        const duplicate = history.find(h => {
+          if (h.type !== 'medicine') return false;
+          try {
+            const hJson = JSON.parse(h.result_json);
+            return hJson.medicine_name?.toLowerCase() === data.medicine_name?.toLowerCase() && 
+                   hJson.strength?.toLowerCase() === data.strength?.toLowerCase();
+          } catch { return false; }
+        });
+        if (duplicate) deleteScan(duplicate.id);
+
         saveScanResult(patient.id, 'medicine', permUri, JSON.stringify(data), 'normal', false);
+        setCurrentScanUri(permUri);
         const currentMeds = getMedicines(patient.id);
         const exists = currentMeds.some((m: any) => m.name.toLowerCase() === data.medicine_name.toLowerCase());
         setIsAlreadyInSchedule(exists);
@@ -315,7 +329,8 @@ export default function QuickScanScreen({ navigation }: any) {
     if (!result || !patient?.id) return;
     addMedicine({
       patient_id: patient.id, name: result.medicine_name,
-      generic_name: result.generic_name, dose_amount: 1, dose_unit: 'tablet',
+      generic_name: result.generic_name, image_path: currentScanUri || '',
+      dose_amount: 1, dose_unit: result.medicine_form || 'tablet',
       times_per_day: 1, dose_times: ['08:00'], days_type: 'daily',
       custom_days: [], start_date: new Date().toISOString().split('T')[0],
       end_date: null, stock_quantity: 0, notes: result.simple_description,

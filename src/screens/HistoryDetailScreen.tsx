@@ -1,14 +1,25 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, SafeAreaView, StatusBar, Modal, Alert
+  Image, SafeAreaView, StatusBar, Modal, Alert, Dimensions
 } from 'react-native';
+import { 
+  GestureHandlerRootView, 
+  Gesture, 
+  GestureDetector 
+} from 'react-native-gesture-handler';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  withSpring 
+} from 'react-native-reanimated';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import dayjs from 'dayjs';
 import { TTSService } from '../services/TTSService';
 import { markScanAsSaved } from '../db/queries/reports';
 import { usePatientStore } from '../store/patientStore';
-import { addMedicine, getMedicines } from '../db/queries/medicines';
+import { addMedicine, getMedicines, deleteMedicineByName } from '../db/queries/medicines';
 
 const TABS = ['Uses', 'Dosage', 'Side Effects', 'Warnings', 'Interactions'];
 
@@ -93,13 +104,22 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
     if (!patient?.id) return;
     addMedicine({
       patient_id: patient.id, name: data.medicine_name,
-      generic_name: data.generic_name, dose_amount: 1, dose_unit: 'tablet',
+      generic_name: data.generic_name, image_path: item.image_path,
+      dose_amount: 1, dose_unit: data.medicine_form || 'tablet',
       times_per_day: 1, dose_times: ['08:00'], days_type: 'daily',
       custom_days: [], start_date: new Date().toISOString().split('T')[0],
       end_date: null, stock_quantity: 0, notes: data.simple_description,
       scan_cache_json: JSON.stringify(data),
     });
+    setIsAlreadyInSchedule(true);
     Alert.alert('✅ Added', `${data.medicine_name} has been added to your medicine list.`);
+  };
+
+  const handleRemoveMedicine = () => {
+    if (!patient?.id) return;
+    deleteMedicineByName(patient.id, data.medicine_name);
+    setIsAlreadyInSchedule(false);
+    Alert.alert('✅ Removed', `${data.medicine_name} has been removed from your medicine list.`);
   };
 
   return (
@@ -168,15 +188,14 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
               )}
             </View>
 
-            {!isAlreadyInSchedule && (
+            {!isAlreadyInSchedule ? (
               <TouchableOpacity style={styles.actionBtn} onPress={handleAddMedicine}>
                 <Text style={styles.actionBtnText}>+ Add to My Medicines</Text>
               </TouchableOpacity>
-            )}
-            {isAlreadyInSchedule && (
-              <View style={styles.alreadyBadge}>
-                <Text style={styles.alreadyText}>✓ Already in your schedule</Text>
-              </View>
+            ) : (
+              <TouchableOpacity style={[styles.actionBtn, styles.removeBtn]} onPress={handleRemoveMedicine}>
+                <Text style={styles.removeBtnText}>✕ Remove from My Medicines</Text>
+              </TouchableOpacity>
             )}
           </View>
         ) : (
@@ -227,23 +246,81 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
 
       {/* Full Screen Image Viewer */}
       <Modal visible={isZoomVisible} transparent animationType="fade" onRequestClose={() => setIsZoomVisible(false)}>
-        <View style={styles.zoomContainer}>
-          <SafeAreaView style={styles.zoomHeader}>
-            <TouchableOpacity onPress={() => setIsZoomVisible(false)} style={styles.zoomClose}>
-              <Text style={styles.zoomCloseText}>✕ Close</Text>
-            </TouchableOpacity>
-          </SafeAreaView>
-          <ScrollView 
-            maximumZoomScale={5} 
-            minimumZoomScale={1} 
-            centerContent 
-            contentContainerStyle={styles.zoomScroll}
-          >
-            <Image source={{ uri: item.image_path }} style={styles.zoomImage} resizeMode="contain" />
-          </ScrollView>
-        </View>
+        <ZoomViewer uri={item.image_path} onClose={() => setIsZoomVisible(false)} />
       </Modal>
     </SafeAreaView>
+  );
+}
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+function ZoomViewer({ uri, onClose }: { uri: string, onClose: () => void }) {
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.value = savedScale.value * e.scale;
+    })
+    .onEnd(() => {
+      if (scale.value < 1) {
+        scale.value = withTiming(1);
+        savedScale.value = 1;
+      } else {
+        savedScale.value = scale.value;
+      }
+    });
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      translateX.value = savedTranslateX.value + e.translationX;
+      translateY.value = savedTranslateY.value + e.translationY;
+    })
+    .onEnd(() => {
+      // Return to center if scale is 1
+      if (scale.value <= 1.1) {
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      } else {
+        savedTranslateX.value = translateX.value;
+        savedTranslateY.value = translateY.value;
+      }
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  const composedGesture = Gesture.Simultaneous(pinchGesture, panGesture);
+
+  return (
+    <GestureHandlerRootView style={styles.zoomContainer}>
+      <SafeAreaView style={styles.zoomHeader}>
+        <TouchableOpacity onPress={onClose} style={styles.zoomClose}>
+          <Text style={styles.zoomCloseText}>✕ Close</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+      
+      <GestureDetector gesture={composedGesture}>
+        <Animated.View style={styles.zoomContent}>
+          <Animated.Image 
+            source={{ uri }} 
+            style={[styles.zoomImage, animatedStyle]} 
+            resizeMode="contain" 
+          />
+        </Animated.View>
+      </GestureDetector>
+    </GestureHandlerRootView>
   );
 }
 
@@ -318,6 +395,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', backgroundColor: '#fff' 
   },
   actionBtnText: { ...typography.labelLarge, color: colors.primary },
+  removeBtn: { borderColor: colors.danger, backgroundColor: colors.danger + '10' },
+  removeBtnText: { ...typography.labelLarge, color: colors.danger },
   alreadyBadge: { 
     marginTop: spacing.xl, paddingVertical: 12, borderRadius: borderRadius.md, 
     backgroundColor: colors.success + '15', alignItems: 'center', borderWidth: 1, borderColor: colors.success 
@@ -327,6 +406,6 @@ const styles = StyleSheet.create({
   zoomHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)' },
   zoomClose: { padding: 16, alignItems: 'flex-end' },
   zoomCloseText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  zoomScroll: { flexGrow: 1, justifyContent: 'center' },
-  zoomImage: { width: '100%', height: '100%', minHeight: 500 },
+  zoomContent: { flex: 1, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  zoomImage: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.8 },
 });

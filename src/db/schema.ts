@@ -27,6 +27,7 @@ export function initDatabase() {
       patient_id INTEGER,
       name TEXT NOT NULL,
       generic_name TEXT,
+      image_path TEXT,
       dose_amount REAL,
       dose_unit TEXT,
       times_per_day INTEGER DEFAULT 1,
@@ -42,6 +43,10 @@ export function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  try {
+    db.execute('ALTER TABLE medicines ADD COLUMN image_path TEXT');
+  } catch (e) {}
 
   db.execute(`
     CREATE TABLE IF NOT EXISTS reminder_logs (
