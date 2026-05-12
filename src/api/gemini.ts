@@ -13,7 +13,7 @@ async function callGemini(prompt: string, base64Images: string | string[], mimeT
       ]
     }],
     generationConfig: {
-      temperature: 0.05,
+      temperature: 0.1,
       maxOutputTokens: 4096,
       responseMimeType: 'application/json',
     }
@@ -23,19 +23,38 @@ async function callGemini(prompt: string, base64Images: string | string[], mimeT
       headers: { 'Content-Type': 'application/json' },
       timeout: 30000,
     });
-    const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    let text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!text) throw new Error('Empty response from Gemini');
 
-    // Extract JSON from potential markdown or surrounding text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in response');
+    // Debug log to see why it fails
+    console.log('Gemini Raw Response Length:', text.length);
+    if (text.length < 50) console.log('Gemini Raw Preview:', text);
+
+    // Remove markdown code blocks if present
+    let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    try {
+      return JSON.parse(cleaned);
+    } catch (parseError) {
+      // Fallback: Try to extract the first/main JSON object found
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        const extracted = text.substring(firstBrace, lastBrace + 1);
+        try {
+          return JSON.parse(extracted);
+        } catch (e) {
+          console.error('Extraction Parse Error:', extracted.slice(-50)); // See the end of the string
+          throw new Error('AI response was incomplete or malformed');
+        }
+      }
+      throw new Error('Could not parse AI response as JSON');
     }
-
-    const cleaned = jsonMatch[0].trim();
-    return JSON.parse(cleaned);
   } catch (error: any) {
-    console.error('Gemini API Error:', error?.response?.data || error.message);
-    throw error;
+    const apiError = error?.response?.data?.[0]?.error?.message || error?.response?.data?.error?.message || error.message;
+    console.error('Gemini API Error:', apiError);
+    throw new Error(apiError);
   }
 }
 

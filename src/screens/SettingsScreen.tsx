@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Switch, SafeAreaView, StatusBar, Alert,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { usePatientStore } from '../store/patientStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useLanguageStore, LANGUAGES } from '../store/languageStore';
@@ -54,10 +55,20 @@ export default function SettingsScreen({ navigation }: any) {
   const { highContrast, shortcutsEnabled, caregiverAlertsEnabled, fontScale, setHighContrast, setShortcutsEnabled, setCaregiverAlerts, setFontScale } = useSettingsStore();
   const { language, setLanguage } = useLanguageStore();
   const [showShortcutGuide, setShowShortcutGuide] = useState(false);
-
   const currentLang = LANGUAGES.find(l => l.code === language);
-  const medicinesCount = patient?.id ? getMedicines(patient.id).length : 0;
-  const reportsCount   = patient?.id ? getScanHistory(patient.id).length : 0;
+
+  const isFocused = useIsFocused();
+  const [counts, setCounts] = useState({ active: 0, scannedMeds: 0, reports: 0 });
+
+  React.useEffect(() => {
+    if (isFocused && patient?.id) {
+      const active = getMedicines(patient.id).length;
+      const history = getScanHistory(patient.id);
+      const scannedMeds = history.filter((h: any) => h.type === 'medicine').length;
+      const reports = history.filter((h: any) => h.type === 'report').length;
+      setCounts({ active, scannedMeds, reports });
+    }
+  }, [isFocused, patient?.id]);
 
   const handleClearData = () => {
     Alert.alert('Clear All Data', 'This will delete all your medicines, reports, and profile. This cannot be undone.', [
@@ -95,9 +106,11 @@ export default function SettingsScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         <Section title="My Health">
-          <Row icon="💊" label="My Medicines" value={`${medicinesCount} active`} onPress={() => navigation.navigate('Medicines')} />
+          <Row icon="💊" label="My Medicines" value={`${counts.active} active`} onPress={() => navigation.navigate('Medicines')} />
           <Divider />
-          <Row icon="📋" label="Report History" value={`${reportsCount} reports`} onPress={() => navigation.navigate('Medicines')} />
+          <Row icon="🕒" label="Medicine Scan History" value={`${counts.scannedMeds} scans`} onPress={() => navigation.navigate('ScanHistory', { type: 'medicine' })} />
+          <Divider />
+          <Row icon="📋" label="Report History" value={`${counts.reports} reports`} onPress={() => navigation.navigate('ScanHistory', { type: 'report' })} />
           <Divider />
           <Row icon="💬" label="Health Chat" value="Ask the bot" onPress={() => navigation.navigate('Chat')} />
         </Section>

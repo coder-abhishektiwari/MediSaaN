@@ -61,9 +61,14 @@ export function initDatabase() {
       image_path TEXT,
       result_json TEXT,
       severity TEXT,
+      is_saved INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  try {
+    db.execute('ALTER TABLE scan_results ADD COLUMN is_saved INTEGER DEFAULT 0');
+  } catch (e) {}
 
   db.execute(`
     CREATE TABLE IF NOT EXISTS chat_sessions (

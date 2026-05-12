@@ -10,8 +10,8 @@ import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { scanMedicine } from '../api/gemini';
 import { saveScanResult } from '../db/queries/reports';
-import { addMedicine } from '../db/queries/medicines';
-import { compressAndEncode } from '../utils/imageUtils';
+import { addMedicine, getMedicines } from '../db/queries/medicines';
+import { compressAndEncode, savePermanentImage } from '../utils/imageUtils';
 import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
@@ -223,6 +223,7 @@ export default function QuickScanScreen({ navigation }: any) {
   const [scanStatus, setScanStatus]           = useState('Place a medicine in the frame');
   const [frameState, setFrameState]           = useState<FrameState>('empty');
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
+  const [isAlreadyInSchedule, setIsAlreadyInSchedule] = useState(false);
   const isScanningRef = useRef(false);
 
   // Turn camera off when a result is showing or detailed modal is open
@@ -249,7 +250,8 @@ export default function QuickScanScreen({ navigation }: any) {
       setLoading(true);
       setProcessingStage('processing');
       setScanStatus('Searching for medicine…');
-      const base64 = encodedImage || await compressAndEncode(uri);
+      const permUri = await savePermanentImage(uri);
+      const base64 = encodedImage || await compressAndEncode(permUri);
       const ctx    = buildPatientContext(patient, language);
       const data   = await scanMedicine(base64, ctx);
       if (!data.is_medicine) {
@@ -263,7 +265,12 @@ export default function QuickScanScreen({ navigation }: any) {
       setFrameState('candidate');
       setScanStatus('Medicine detected');
       TTSService.speak(data.simple_description || data.medicine_name);
-      if (patient.id) saveScanResult(patient.id, 'medicine', uri, JSON.stringify(data), 'normal');
+      if (patient.id) {
+        saveScanResult(patient.id, 'medicine', permUri, JSON.stringify(data), 'normal', false);
+        const currentMeds = getMedicines(patient.id);
+        const exists = currentMeds.some((m: any) => m.name.toLowerCase() === data.medicine_name.toLowerCase());
+        setIsAlreadyInSchedule(exists);
+      }
     } catch (e: any) {
       if (!silentNotMedicine) {
         const msg = 'Could not identify medicine. Please try with a clearer photo.';
@@ -431,9 +438,15 @@ export default function QuickScanScreen({ navigation }: any) {
                 <Text style={styles.moreBtnText}>Know More →</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.addListBtn} onPress={handleAddToList}>
-              <Text style={styles.addListBtnText}>+ Add to My Medicines</Text>
-            </TouchableOpacity>
+            {!isAlreadyInSchedule ? (
+              <TouchableOpacity style={styles.addListBtn} onPress={handleAddToList}>
+                <Text style={styles.addListBtnText}>+ Add to My Medicines</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={[styles.addListBtn, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
+                <Text style={[styles.addListBtnText, { color: colors.success }]}>✓ In Your Schedule</Text>
+              </View>
+            )}
             <TouchableOpacity style={styles.scanAgainBtn} onPress={handleScanAgain}>
               <Text style={styles.scanAgainText}>Scan Another</Text>
             </TouchableOpacity>
@@ -478,9 +491,15 @@ export default function QuickScanScreen({ navigation }: any) {
               )}
             </ScrollView>
             <View style={styles.detailedFooter}>
-              <TouchableOpacity style={styles.addListBtn} onPress={() => { handleAddToList(); setShowDetailed(false); }}>
-                <Text style={styles.addListBtnText}>+ Add to My Medicines</Text>
-              </TouchableOpacity>
+              {!isAlreadyInSchedule ? (
+                <TouchableOpacity style={styles.addListBtn} onPress={() => { handleAddToList(); setShowDetailed(false); }}>
+                  <Text style={styles.addListBtnText}>+ Add to My Medicines</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={[styles.addListBtn, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
+                  <Text style={[styles.addListBtnText, { color: colors.success }]}>✓ In Your Schedule</Text>
+                </View>
+              )}
             </View>
           </SafeAreaView>
         </Modal>

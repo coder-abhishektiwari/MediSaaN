@@ -9,8 +9,8 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { analyzeReport } from '../api/gemini';
-import { saveScanResult } from '../db/queries/reports';
-import { compressAndEncode } from '../utils/imageUtils';
+import { saveScanResult, markScanAsSaved } from '../db/queries/reports';
+import { compressAndEncode, savePermanentImage } from '../utils/imageUtils';
 import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
 import { colors, typography, spacing, borderRadius, sizes, statusColors, severityColors } from '../theme';
@@ -251,8 +251,10 @@ export default function ReportScanScreen({ navigation }: any) {
   const [isCameraActive, setIsCameraActive]   = useState(true);
   const [images, setImages]                   = useState<string[]>([]);
   const [askMorePages, setAskMorePages]        = useState(false);
-  const [loading, setLoading]                 = useState(false);
   const [result, setResult]                   = useState<any>(null);
+  const [currentScanId, setCurrentScanId]     = useState<number | null>(null);
+  const [isSavedToProfile, setIsSavedToProfile] = useState(false);
+  const [loading, setLoading]                 = useState(false);
   const [showDetailed, setShowDetailed]       = useState(false);
   const [scanStatus, setScanStatus]           = useState('Place a medical report in the frame');
   const [frameState, setFrameState]           = useState<FrameState>('empty');
@@ -261,13 +263,13 @@ export default function ReportScanScreen({ navigation }: any) {
 
   // Camera lifecycle — off when not needed or unfocused
   useEffect(() => {
-    if (!isFocused) TTSService.stop();
+    if (!isFocused || !!result) TTSService.stop();
     return () => TTSService.stop();
-  }, [isFocused]);
+  }, [isFocused, !!result]);
 
   useEffect(() => {
-    setIsCameraActive(!result && !askMorePages);
-  }, [result, askMorePages]);
+    setIsCameraActive(!result && !askMorePages && !loading);
+  }, [result, askMorePages, loading]);
 
   // Voice on each stage transition
   useEffect(() => {
@@ -294,6 +296,27 @@ export default function ReportScanScreen({ navigation }: any) {
     }
   }, []);
 
+  const reset = () => {
+    setResult(null);
+    setImages([]);
+    setFrameState('empty');
+    setScanStatus('Place a medical report in the frame');
+    setIsCameraActive(true);
+    setCurrentScanId(null);
+    setIsSavedToProfile(false);
+  };
+
+  const toggleSaveReport = () => {
+    if (currentScanId) {
+      const newState = !isSavedToProfile;
+      markScanAsSaved(currentScanId, newState);
+      setIsSavedToProfile(newState);
+      if (newState) {
+        Alert.alert('Success', 'Report added to your profile and AI context.');
+      }
+    }
+  };
+
   const handleGallery = async () => {
     const res = await launchImageLibrary({ mediaType: 'photo', quality: 0.8, selectionLimit: 5 });
     if (res.assets?.length) {
@@ -310,7 +333,8 @@ export default function ReportScanScreen({ navigation }: any) {
     setProcessingStage('validating');
     try {
       setScanStatus('Validating report…');
-      const encoded = encodedImages || await Promise.all(imgs.map(uri => compressAndEncode(uri)));
+      const permUris = await Promise.all(imgs.map(uri => savePermanentImage(uri)));
+      const encoded = encodedImages || await Promise.all(permUris.map(uri => compressAndEncode(uri)));
       const ctx  = buildPatientContext(patient, language);
       const data = await analyzeReport(encoded, ctx);
 
@@ -332,7 +356,11 @@ export default function ReportScanScreen({ navigation }: any) {
       setFrameState('candidate');
       setScanStatus('Report detected');
       TTSService.speak(data.simple_verdict);
-      if (patient.id) saveScanResult(patient.id, 'report', imgs[0], JSON.stringify(data), data.severity || 'normal');
+      if (patient.id) {
+        const id = saveScanResult(patient.id, 'report', permUris[0], JSON.stringify(data), data.severity || 'normal', false);
+        setCurrentScanId(id ?? null);
+        setIsSavedToProfile(false);
+      }
     } catch (e: any) {
       if (!silentNotReport) {
         const msg = e.message || 'Could not analyze report. Please try with a clearer photo.';
@@ -349,11 +377,7 @@ export default function ReportScanScreen({ navigation }: any) {
   }, [language, patient]);
 
   const handleScanAgain = () => {
-    setResult(null);
-    setImages([]);
-    setFrameState('empty');
-    setScanStatus('Place a medical report in the frame');
-    setIsCameraActive(true);
+    reset();
   };
 
   if (!hasPermission) {
@@ -479,8 +503,8 @@ export default function ReportScanScreen({ navigation }: any) {
               </View>
             </View>
             <View style={styles.simpleActions}>
-              <TouchableOpacity style={styles.speakBtn} onPress={() => TTSService.speak(result.simple_verdict)}>
-                <Text style={styles.speakBtnText}>🔊 Speak Again</Text>
+              <TouchableOpacity style={[styles.speakBtn, isSavedToProfile && { backgroundColor: colors.success }]} onPress={toggleSaveReport}>
+                <Text style={styles.speakBtnText}>{isSavedToProfile ? '✓ Saved to Profile' : '➕ Add to My Record'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.moreBtn} onPress={() => setShowDetailed(true)}>
                 <Text style={styles.moreBtnText}>Full Report →</Text>

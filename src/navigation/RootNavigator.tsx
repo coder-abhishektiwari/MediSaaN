@@ -19,6 +19,8 @@ import ReportScanScreen from '../screens/ReportScanScreen';
 import ChatScreen from '../screens/ChatScreen';
 import AddMedicineScreen from '../screens/AddMedicineScreen';
 import MedicineHistoryScreen from '../screens/MedicineHistoryScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import HistoryDetailScreen from '../screens/HistoryDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -65,6 +67,8 @@ export default function RootNavigator() {
         <Stack.Screen name="Chat"          component={ChatScreen}          options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="AddMedicine"   component={AddMedicineScreen}   options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="MedicineHistory" component={MedicineHistoryScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="ScanHistory"     component={HistoryScreen}         options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="HistoryDetail"   component={HistoryDetailScreen}   options={{ animation: 'slide_from_right' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
