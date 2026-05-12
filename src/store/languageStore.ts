@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { createMMKV } from 'react-native-mmkv';
+import { MMKV } from 'react-native-mmkv';
 
-const storage = createMMKV({ id: 'language-store' });
+const storage = new MMKV({ id: 'language-store' });
 
 export const LANGUAGES = [
   { code: 'en', native: 'English',    roman: 'English',   locale: 'en-IN' },

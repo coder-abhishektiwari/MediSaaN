@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
   StatusBar, Alert, ScrollView, Modal, Animated, Easing,
 } from 'react-native';
-import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput, type CameraRef } from 'react-native-vision-camera';
+import { useIsFocused } from '@react-navigation/native';
+import { Camera, useCameraDevice, useCameraPermission, type CameraRef } from 'react-native-vision-camera';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
@@ -240,13 +241,13 @@ type ProcessingStage = 'idle' | 'capturing' | 'validating' | 'processing';
 
 export default function ReportScanScreen({ navigation }: any) {
   const device      = useCameraDevice('back');
-  const photoOutput = usePhotoOutput({ quality: 0.75 });
   const { hasPermission, requestPermission } = useCameraPermission();
   const camera = useRef<CameraRef>(null);
 
   const { patient }  = usePatientStore();
   const { language } = useLanguageStore();
 
+  const isFocused = useIsFocused();
   const [isCameraActive, setIsCameraActive]   = useState(true);
   const [images, setImages]                   = useState<string[]>([]);
   const [askMorePages, setAskMorePages]        = useState(false);
@@ -258,7 +259,12 @@ export default function ReportScanScreen({ navigation }: any) {
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
   const isScanningRef = useRef(false);
 
-  // Camera lifecycle — off when not needed
+  // Camera lifecycle — off when not needed or unfocused
+  useEffect(() => {
+    if (!isFocused) TTSService.stop();
+    return () => TTSService.stop();
+  }, [isFocused]);
+
   useEffect(() => {
     setIsCameraActive(!result && !askMorePages);
   }, [result, askMorePages]);
@@ -276,8 +282,8 @@ export default function ReportScanScreen({ navigation }: any) {
       setLoading(true);
       setProcessingStage('capturing');
       setScanStatus('Capturing…');
-      const photo = await photoOutput.capturePhotoToFile({ flashMode: 'off', enableShutterSound: true }, {});
-      const uri = 'file://' + photo.filePath;
+      const photo = await camera.current.takePhoto({ flash: 'off', enableShutterSound: true });
+      const uri = 'file://' + photo.path;
       setImages(prev => [...prev, uri]);
       setLoading(false);
       setProcessingStage('idle');
@@ -285,9 +291,8 @@ export default function ReportScanScreen({ navigation }: any) {
     } catch {
       setLoading(false);
       setProcessingStage('idle');
-      Alert.alert('Camera Error', 'Could not take photo. Please try again.');
     }
-  }, [photoOutput]);
+  }, []);
 
   const handleGallery = async () => {
     const res = await launchImageLibrary({ mediaType: 'photo', quality: 0.8, selectionLimit: 5 });
@@ -305,11 +310,6 @@ export default function ReportScanScreen({ navigation }: any) {
     setProcessingStage('validating');
     try {
       setScanStatus('Validating report…');
-      // Brief pause so the validating overlay shows before the heavy encode
-      await new Promise(r => setTimeout(r, 400));
-      setProcessingStage('processing');
-      setScanStatus('Reading your report…');
-
       const encoded = encodedImages || await Promise.all(imgs.map(uri => compressAndEncode(uri)));
       const ctx  = buildPatientContext(patient, language);
       const data = await analyzeReport(encoded, ctx);
@@ -322,6 +322,11 @@ export default function ReportScanScreen({ navigation }: any) {
         if (!silentNotReport) Alert.alert('Not a Report', message);
         return;
       }
+
+      // If valid, show processing for a moment
+      setProcessingStage('processing');
+      setScanStatus('Reading your report…');
+      await new Promise(r => setTimeout(r, 1000));
 
       setResult(data);
       setFrameState('candidate');
@@ -380,8 +385,8 @@ export default function ReportScanScreen({ navigation }: any) {
           ref={camera}
           style={StyleSheet.absoluteFill}
           device={device}
-          isActive={isCameraActive}
-          outputs={[photoOutput]}
+          isActive={isCameraActive && isFocused}
+          photo={true}
         />
       )}
 

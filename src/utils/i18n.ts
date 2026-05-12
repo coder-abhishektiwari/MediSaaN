@@ -14,10 +14,9 @@ import ml from '../locales/ml.json';
 import pa from '../locales/pa.json';
 import or from '../locales/or.json';
 import ur from '../locales/ur.json';
-import { createMMKV } from 'react-native-mmkv';
-console.log('createMMKV function:', createMMKV);
+import { MMKV } from 'react-native-mmkv';
 
-const storage = createMMKV({ id: 'language-store' });
+const storage = new MMKV({ id: 'language-store' });
 
 i18n
   .use(initReactI18next)

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { createMMKV } from 'react-native-mmkv';
+import { MMKV } from 'react-native-mmkv';
 
-const storage = createMMKV({ id: 'patient-store' });
+const storage = new MMKV({ id: 'patient-store' });
 
 export interface Patient {
   id?: number;

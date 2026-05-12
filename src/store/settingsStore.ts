@@ -1,8 +1,7 @@
 import { create } from 'zustand';
-import { createMMKV } from 'react-native-mmkv';
-console.log('createMMKV in settingsStore:', createMMKV);
+import { MMKV } from 'react-native-mmkv';
 
-const storage = createMMKV({ id: 'settings-store' });
+const storage = new MMKV({ id: 'settings-store' });
 
 interface SettingsStore {
   fontScale: number;

@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
   StatusBar, Alert, ScrollView, Modal, Animated, Easing,
 } from 'react-native';
-import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput, type CameraRef } from 'react-native-vision-camera';
+import { useIsFocused } from '@react-navigation/native';
+import { Camera, useCameraDevice, useCameraPermission, type CameraRef } from 'react-native-vision-camera';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
@@ -207,14 +208,14 @@ const FRAME = 240;
 
 export default function QuickScanScreen({ navigation }: any) {
   const device      = useCameraDevice('back');
-  const photoOutput = usePhotoOutput({ quality: 0.75 });
   const { hasPermission, requestPermission } = useCameraPermission();
   const camera = useRef<CameraRef>(null);
 
   const { patient }  = usePatientStore();
   const { language } = useLanguageStore();
 
-  const [isCameraActive, setIsCameraActive]   = useState(true);   // camera lifecycle
+  const isFocused = useIsFocused();
+  const [isCameraActive, setIsCameraActive]   = useState(true);   // internal state for results
   const [loading, setLoading]                 = useState(false);
   const [result, setResult]                   = useState<any>(null);
   const [showDetailed, setShowDetailed]       = useState(false);
@@ -225,6 +226,12 @@ export default function QuickScanScreen({ navigation }: any) {
   const isScanningRef = useRef(false);
 
   // Turn camera off when a result is showing or detailed modal is open
+  // Stop voice and camera when screen is not focused or unmounted
+  useEffect(() => {
+    if (!isFocused) TTSService.stop();
+    return () => TTSService.stop();
+  }, [isFocused]);
+
   useEffect(() => {
     setIsCameraActive(!result );
   }, [result]);
@@ -275,10 +282,11 @@ export default function QuickScanScreen({ navigation }: any) {
   const handleCapture = useCallback(async () => {
   if (!camera.current || isScanningRef.current) return;
   isScanningRef.current = true;
-  let photo: any;
+  let filePath = '';
   try {
     // Take photo FIRST — before any state change that could unmount the camera
-    photo = await photoOutput.capturePhotoToFile({ flashMode: 'off', enableShutterSound: false }, {});
+    const photo = await camera.current.takePhoto({ flash: 'off', enableShutterSound: false });
+    filePath = photo.path;
   } catch {
     isScanningRef.current = false;
     Alert.alert('Camera Error', 'Could not take photo. Please try again.');
@@ -288,8 +296,8 @@ export default function QuickScanScreen({ navigation }: any) {
   setLoading(true);
   setProcessingStage('validating');
   setScanStatus('Validating…');
-  await processImage('file://' + photo.filePath, false);
-}, [photoOutput, processImage]);
+  await processImage('file://' + filePath, false);
+}, [processImage]);
 
   const handleGallery = async () => {
     const res = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
@@ -344,8 +352,8 @@ export default function QuickScanScreen({ navigation }: any) {
           ref={camera}
           style={StyleSheet.absoluteFill}
           device={device}
-          isActive={isCameraActive}
-          outputs={[photoOutput]}
+          isActive={isCameraActive && isFocused}
+          photo={true}
         />
       )}
 
