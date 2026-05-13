@@ -9,12 +9,13 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { scanMedicine } from '../api/gemini';
-import { saveScanResult } from '../db/queries/reports';
+import { saveScanResult, getScanHistory, deleteScan } from '../db/queries/reports';
 import { addMedicine, getMedicines } from '../db/queries/medicines';
 import { compressAndEncode, savePermanentImage } from '../utils/imageUtils';
 import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
+import { useTranslation } from 'react-i18next';
 
 // ─── Stage messages per language ────────────────────────────────────────────
 
@@ -207,6 +208,7 @@ const FRAME_ERROR_COLOR  = '#EF4444';
 const FRAME = 240;
 
 export default function QuickScanScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const device      = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
   const camera = useRef<CameraRef>(null);
@@ -215,30 +217,39 @@ export default function QuickScanScreen({ navigation }: any) {
   const { language } = useLanguageStore();
 
   const isFocused = useIsFocused();
-  const [isCameraActive, setIsCameraActive]   = useState(true);   // internal state for results
+  const [isCameraActive, setIsCameraActive]   = useState(true);
   const [loading, setLoading]                 = useState(false);
   const [result, setResult]                   = useState<any>(null);
   const [showDetailed, setShowDetailed]       = useState(false);
   const [activeTab, setActiveTab]             = useState(0);
-  const [scanStatus, setScanStatus]           = useState('Place a medicine in the frame');
+  const [scanStatus, setScanStatus]           = useState(t('scan_instruction'));
   const [frameState, setFrameState]           = useState<FrameState>('empty');
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
   const [isAlreadyInSchedule, setIsAlreadyInSchedule] = useState(false);
   const [currentScanUri, setCurrentScanUri] = useState<string | null>(null);
   const isScanningRef = useRef(false);
 
-  // Turn camera off when a result is showing or detailed modal is open
-  // Stop voice and camera when screen is not focused or unmounted
+  const TABS = [t('uses'), t('dosage'), t('side_effects'), t('warnings'), t('how_to_take')];
+
+  const HOW_TO_LABEL = (val: string) => {
+    const m: Record<string, string> = {
+      before_food: `🍽 ${t('before_food')}`,
+      after_food:  `🍽 ${t('after_food')}`,
+      with_food:   `🍽 ${t('with_food')}`,
+      anytime:     `⏰ ${t('anytime', { defaultValue: 'Anytime' })}`,
+    };
+    return m[val] || val;
+  };
+
   useEffect(() => {
     if (!isFocused) TTSService.stop();
     return () => TTSService.stop();
   }, [isFocused]);
 
   useEffect(() => {
-    setIsCameraActive(!result );
+    setIsCameraActive(!result);
   }, [result]);
 
-  // Speak stage change
   useEffect(() => {
     if (processingStage === 'idle') return;
     const msg = getMsg(processingStage, language);
@@ -246,17 +257,17 @@ export default function QuickScanScreen({ navigation }: any) {
   }, [processingStage, language]);
 
   const processImage = useCallback(async (uri: string, silentNotMedicine = false, encodedImage?: string) => {
-    if (!patient) { Alert.alert('Error', 'Patient profile not found.'); setLoading(false); return; }
+    if (!patient) { Alert.alert(t('error_generic'), t('note_empty')); setLoading(false); return; }
     try {
       setLoading(true);
       setProcessingStage('processing');
-      setScanStatus('Searching for medicine…');
+      setScanStatus(t('identifying'));
       const permUri = await savePermanentImage(uri);
       const base64 = encodedImage || await compressAndEncode(permUri);
       const ctx    = buildPatientContext(patient, language);
       const data   = await scanMedicine(base64, ctx);
       if (!data.is_medicine) {
-        const message = data.not_medicine_message || 'This is not a medicine. Please align properly.';
+        const message = data.not_medicine_message || t('error_generic');
         setFrameState('invalid');
         setScanStatus(message);
         TTSService.speak(message);
@@ -264,10 +275,9 @@ export default function QuickScanScreen({ navigation }: any) {
       }
       setResult(data);
       setFrameState('candidate');
-      setScanStatus('Medicine detected');
+      setScanStatus(t('status_normal'));
       TTSService.speak(data.simple_description || data.medicine_name);
       if (patient.id) {
-        // Duplicate detection: Remove old scan if same name and strength
         const history = getScanHistory(patient.id);
         const duplicate = history.find(h => {
           if (h.type !== 'medicine') return false;
@@ -287,38 +297,36 @@ export default function QuickScanScreen({ navigation }: any) {
       }
     } catch (e: any) {
       if (!silentNotMedicine) {
-        const msg = 'Could not identify medicine. Please try with a clearer photo.';
-        Alert.alert('Scan Failed', e.message || msg);
+        const msg = t('error_generic');
+        Alert.alert(t('error_generic'), e.message || msg);
         TTSService.speak(msg);
       }
       setFrameState('invalid');
-      setScanStatus('Keep the medicine steady in the frame');
+      setScanStatus(t('scan_instruction'));
     } finally {
       setLoading(false);
       setProcessingStage('idle');
       isScanningRef.current = false;
     }
-  }, [patient, language]);
+  }, [patient, language, t]);
 
   const handleCapture = useCallback(async () => {
-  if (!camera.current || isScanningRef.current) return;
-  isScanningRef.current = true;
-  let filePath = '';
-  try {
-    // Take photo FIRST — before any state change that could unmount the camera
-    const photo = await camera.current.takePhoto({ flash: 'off', enableShutterSound: false });
-    filePath = photo.path;
-  } catch {
-    isScanningRef.current = false;
-    Alert.alert('Camera Error', 'Could not take photo. Please try again.');
-    return;
-  }
-  // Now safe to show loading overlay (camera ref no longer needed)
-  setLoading(true);
-  setProcessingStage('validating');
-  setScanStatus('Validating…');
-  await processImage('file://' + filePath, false);
-}, [processImage]);
+    if (!camera.current || isScanningRef.current) return;
+    isScanningRef.current = true;
+    let filePath = '';
+    try {
+      const photo = await camera.current.takePhoto({ flash: 'off', enableShutterSound: false });
+      filePath = photo.path;
+    } catch {
+      isScanningRef.current = false;
+      Alert.alert(t('error_generic'), 'Camera error');
+      return;
+    }
+    setLoading(true);
+    setProcessingStage('validating');
+    setScanStatus(t('loading'));
+    await processImage('file://' + filePath, false);
+  }, [processImage, t]);
 
   const handleGallery = async () => {
     const res = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
@@ -327,23 +335,23 @@ export default function QuickScanScreen({ navigation }: any) {
 
   const handleAddToList = () => {
     if (!result || !patient?.id) return;
-    addMedicine({
-      patient_id: patient.id, name: result.medicine_name,
-      generic_name: result.generic_name, image_path: currentScanUri || '',
-      dose_amount: 1, dose_unit: result.medicine_form || 'tablet',
-      times_per_day: 1, dose_times: ['08:00'], days_type: 'daily',
-      custom_days: [], start_date: new Date().toISOString().split('T')[0],
-      end_date: null, stock_quantity: 0, notes: result.simple_description,
-      scan_cache_json: JSON.stringify(result),
+    navigation.navigate('AddMedicine', {
+      initialData: {
+        name: result.medicine_name,
+        generic_name: result.generic_name,
+        image_path: currentScanUri || '',
+        dose_unit: result.medicine_form || 'tablet',
+        notes: result.simple_description,
+        scan_cache_json: JSON.stringify(result),
+      }
     });
-    Alert.alert('✅ Added', `${result.medicine_name} has been added to your medicine list.`);
   };
 
   const handleScanAgain = () => {
     setResult(null);
     setShowDetailed(false);
     setFrameState('empty');
-    setScanStatus('Place a medicine in the frame');
+    setScanStatus(t('scan_instruction'));
     setIsCameraActive(true);
   };
 
@@ -352,10 +360,10 @@ export default function QuickScanScreen({ navigation }: any) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.permWrap}>
           <Text style={styles.permEmoji}>📷</Text>
-          <Text style={styles.permTitle}>Camera Permission Needed</Text>
-          <Text style={styles.permSub}>To scan medicines, please allow camera access.</Text>
+          <Text style={styles.permTitle}>{t('perm_camera')}</Text>
+          <Text style={styles.permSub}>{t('perm_camera_sub')}</Text>
           <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-            <Text style={styles.permBtnText}>Allow Camera</Text>
+            <Text style={styles.permBtnText}>{t('perm_allow')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -368,7 +376,6 @@ export default function QuickScanScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Camera — only when actively scanning */}
       {device && isCameraActive && (
         <Camera
           ref={camera}
@@ -379,7 +386,6 @@ export default function QuickScanScreen({ navigation }: any) {
         />
       )}
 
-      {/* Scanner UI */}
       {!result && !loading && (
         <>
           <View style={styles.overlayTop}>
@@ -388,7 +394,7 @@ export default function QuickScanScreen({ navigation }: any) {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
                   <Text style={styles.closeBtnText}>✕</Text>
                 </TouchableOpacity>
-                <Text style={styles.topTitle}>Scan Medicine</Text>
+                <Text style={styles.topTitle}>{t('quick_scan')}</Text>
                 <View style={{ width: 44 }} />
               </View>
             </SafeAreaView>
@@ -421,12 +427,10 @@ export default function QuickScanScreen({ navigation }: any) {
         </>
       )}
 
-      {/* Full-screen animated scanning overlay */}
       {loading && processingStage !== 'idle' && (
         <ScanningOverlay stage={processingStage} lang={language} />
       )}
 
-      {/* Simple result sheet */}
       {result && !showDetailed && (
         <View style={styles.resultOverlay}>
           <SafeAreaView style={{ flex: 1 }} />
@@ -447,36 +451,35 @@ export default function QuickScanScreen({ navigation }: any) {
             <Text style={styles.simpleDescript}>{result.simple_description}</Text>
             <View style={styles.simpleActions}>
               <TouchableOpacity style={styles.speakBtn} onPress={() => TTSService.speak(result.simple_description)}>
-                <Text style={styles.speakBtnText}>🔊 Speak Again</Text>
+                <Text style={styles.speakBtnText}>🔊 {t('continue')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.moreBtn} onPress={() => setShowDetailed(true)}>
-                <Text style={styles.moreBtnText}>Know More →</Text>
+                <Text style={styles.moreBtnText}>{t('know_more')} →</Text>
               </TouchableOpacity>
             </View>
             {!isAlreadyInSchedule ? (
               <TouchableOpacity style={styles.addListBtn} onPress={handleAddToList}>
-                <Text style={styles.addListBtnText}>+ Add to My Medicines</Text>
+                <Text style={styles.addListBtnText}>+ {t('add_to_list')}</Text>
               </TouchableOpacity>
             ) : (
               <View style={[styles.addListBtn, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
-                <Text style={[styles.addListBtnText, { color: colors.success }]}>✓ In Your Schedule</Text>
+                <Text style={[styles.addListBtnText, { color: colors.success }]}>✓ {t('baaki_hain')}</Text>
               </View>
             )}
             <TouchableOpacity style={styles.scanAgainBtn} onPress={handleScanAgain}>
-              <Text style={styles.scanAgainText}>Scan Another</Text>
+              <Text style={styles.scanAgainText}>{t('retry')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
-      {/* Detailed modal */}
       {result && showDetailed && (
         <Modal visible animationType="slide">
           <SafeAreaView style={styles.detailedSafe}>
             <StatusBar barStyle="dark-content" />
             <View style={styles.detailedHeader}>
               <TouchableOpacity onPress={() => setShowDetailed(false)}>
-                <Text style={styles.detailedBack}>← Back</Text>
+                <Text style={styles.detailedBack}>← {t('back')}</Text>
               </TouchableOpacity>
               <Text style={styles.detailedTitle}>{result.medicine_name}</Text>
               <View style={{ width: 60 }} />
@@ -500,7 +503,7 @@ export default function QuickScanScreen({ navigation }: any) {
               </Text>
               {result.drug_interactions && activeTab === 4 && (
                 <View style={styles.interactionBox}>
-                  <Text style={styles.interactionTitle}>⚠️ Drug Interactions</Text>
+                  <Text style={styles.interactionTitle}>⚠️ {t('warnings')}</Text>
                   <Text style={styles.interactionText}>{result.drug_interactions}</Text>
                 </View>
               )}
@@ -508,11 +511,11 @@ export default function QuickScanScreen({ navigation }: any) {
             <View style={styles.detailedFooter}>
               {!isAlreadyInSchedule ? (
                 <TouchableOpacity style={styles.addListBtn} onPress={() => { handleAddToList(); setShowDetailed(false); }}>
-                  <Text style={styles.addListBtnText}>+ Add to My Medicines</Text>
+                  <Text style={styles.addListBtnText}>+ {t('add_to_list')}</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={[styles.addListBtn, { backgroundColor: colors.success + '20', borderColor: colors.success }]}>
-                  <Text style={[styles.addListBtnText, { color: colors.success }]}>✓ In Your Schedule</Text>
+                  <Text style={[styles.addListBtnText, { color: colors.success }]}>✓ {t('baaki_hain')}</Text>
                 </View>
               )}
             </View>

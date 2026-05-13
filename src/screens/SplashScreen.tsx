@@ -5,6 +5,7 @@ import {
 import { colors, typography, spacing } from '../theme';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
+import { PermissionService } from '../services/PermissionService';
 
 const { width } = Dimensions.get('window');
 
@@ -29,12 +30,23 @@ export default function SplashScreen({ navigation }: any) {
       ])
     ).start();
 
-    const timer = setTimeout(() => {
-      const dest = !hasChosen ? 'Language' : !isProfileComplete ? 'ProfileSetup' : 'Main';
-      navigation.replace(dest);
-    }, 2400);
+    const checkAndNavigate = async () => {
+      // Small delay for branding visibility
+      await new Promise(r => setTimeout(r, 2400));
+      
+      const perms = await PermissionService.checkAll();
+      if (!perms.camera || !perms.notifications) {
+        navigation.replace('Permission');
+      } else if (!hasChosen) {
+        navigation.replace('Language');
+      } else if (!isProfileComplete) {
+        navigation.replace('ProfileSetup');
+      } else {
+        navigation.replace('Main');
+      }
+    };
 
-    return () => clearTimeout(timer);
+    checkAndNavigate();
   }, []);
 
   return (

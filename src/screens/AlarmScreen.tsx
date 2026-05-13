@@ -1,0 +1,175 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { 
+  View, Text, StyleSheet, Image, TouchableOpacity, 
+  SafeAreaView, StatusBar, Animated, Dimensions, Vibration, Platform, Alert
+} from 'react-native';
+import { colors, typography, spacing, borderRadius } from '../theme';
+import { logReminderAction } from '../db/queries/medicines';
+import { NotificationService } from '../services/NotificationService';
+import { TTSService } from '../services/TTSService';
+import { VolumeManager } from 'react-native-volume-manager';
+import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
+import notifee from '@notifee/react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+export default function AlarmScreen({ route, navigation }: any) {
+  const { medicine, scheduledTime, notificationId } = route.params || {};
+  const [currentTime, setCurrentTime] = useState(dayjs().format('hh:mm:ss A'));
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    // 1. Clock update
+    const timer = setInterval(() => {
+      setCurrentTime(dayjs().format('hh:mm:ss A'));
+    }, 1000);
+
+    let ttsTimer: any;
+
+    // 2. Battery Optimization Warning
+    const checkBattery = async () => {
+      if (Platform.OS === 'android') {
+        const isOptimized = await NotificationService.isBatteryOptimizationEnabled();
+        if (isOptimized) {
+          Alert.alert(
+            t('battery_warning_title'),
+            t('battery_warning_msg'),
+            [
+              { text: t('settings'), onPress: () => NotificationService.openBatteryOptimizationSettings() },
+              { text: t('later'), style: 'cancel' }
+            ]
+          );
+        }
+      }
+    };
+
+    // 3. Alarm Effects
+    const startEffects = async () => {
+      await checkBattery();
+      await VolumeManager.setVolume(1.0, { type: 'music', showUI: false });
+      Vibration.vibrate([1000, 1000, 1000, 1000], true);
+      
+      const speakMsg = t('emergency_speak', { name: medicine?.name });
+      TTSService.speak(speakMsg);
+      ttsTimer = setInterval(() => TTSService.speak(speakMsg), 10000);
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.15, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        ])
+      ).start();
+    };
+
+    startEffects();
+
+    // 4. Cleanup on Unmount
+    return () => {
+      clearInterval(timer);
+      clearInterval(ttsTimer);
+      Vibration.cancel();
+      TTSService.stop();
+      pulseAnim.stopAnimation();
+    };
+  }, [medicine]);
+
+  const stopAlarm = async () => {
+    Vibration.cancel();
+    TTSService.stop();
+    if (notificationId) {
+      await notifee.cancelNotification(notificationId);
+    }
+  };
+
+  const handleTake = async () => {
+    await stopAlarm();
+    logReminderAction(medicine.id, scheduledTime, 'taken');
+    navigation.replace('Main');
+  };
+
+  const handleSnooze = async () => {
+    await stopAlarm();
+    
+    const now = dayjs();
+    const [h, m] = scheduledTime.split(':').map(Number);
+    const scheduled = dayjs().hour(h).minute(m).second(0);
+    const windowEnd = scheduled.add(3, 'hour');
+
+    if (now.add(30, 'minute').isBefore(windowEnd)) {
+      await NotificationService.scheduleOneTimeAlarm(medicine, scheduledTime, 30);
+      Alert.alert(t('snoozed_title'), t('snoozed_msg'), [
+        { text: t('done'), onPress: () => navigation.replace('Main') }
+      ]);
+    } else {
+      logReminderAction(medicine.id, scheduledTime, 'skipped');
+      Alert.alert(t('window_closed_title'), t('window_closed_msg'), [
+        { text: t('done'), onPress: () => navigation.replace('Main') }
+      ]);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#EF4444" />
+      
+      <View style={styles.header}>
+        <Text style={styles.alertTitle}>{t('alarm_title')}</Text>
+        <Text style={styles.currentTime}>{currentTime}</Text>
+      </View>
+
+      <View style={styles.main}>
+        <Animated.View style={[styles.imageContainer, { transform: [{ scale: pulseAnim }] }]}>
+          {medicine?.image_path ? (
+            <Image source={{ uri: medicine.image_path }} style={styles.image} />
+          ) : (
+            <View style={styles.placeholder}><Text style={styles.placeholderText}>💊</Text></View>
+          )}
+        </Animated.View>
+
+        <Text style={styles.medName}>{medicine?.name || t('medicine_name')}</Text>
+        <Text style={styles.medDose}>{medicine?.dose_amount} {medicine?.dose_unit} • {t('dose_time')}: {scheduledTime}</Text>
+        
+        <View style={styles.warningBox}>
+          <Text style={styles.warningText}>{t('alarm_warning')}</Text>
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.takeBtn} onPress={handleTake} activeOpacity={0.8}>
+          <Text style={styles.takeBtnText}>{t('take_now')}</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.snoozeBtn} onPress={handleSnooze} activeOpacity={0.8}>
+          <Text style={styles.snoozeBtnText}>{t('remind_30m')}</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#EF4444' },
+  header: { alignItems: 'center', paddingTop: 40, paddingBottom: 20 },
+  alertTitle: { fontSize: 16, fontWeight: '900', color: '#fff', letterSpacing: 4, opacity: 0.8 },
+  currentTime: { fontSize: 32, fontWeight: '800', color: '#fff', marginTop: 10 },
+  
+  main: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
+  imageContainer: { width: 220, height: 220, borderRadius: 110, backgroundColor: '#fff', padding: 10, elevation: 20, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, marginBottom: 40 },
+  image: { width: '100%', height: '100%', borderRadius: 100 },
+  placeholder: { width: '100%', height: '100%', borderRadius: 100, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
+  placeholderText: { fontSize: 80 },
+  
+  medName: { fontSize: 32, fontWeight: '900', color: '#fff', textAlign: 'center' },
+  medDose: { fontSize: 18, color: 'rgba(255,255,255,0.8)', fontWeight: '600', marginTop: 10 },
+  
+  warningBox: { marginTop: 30, backgroundColor: 'rgba(255,255,255,0.15)', padding: 16, borderRadius: 16 },
+  warningText: { color: '#fff', textAlign: 'center', fontSize: 14, fontWeight: '500', lineHeight: 20 },
+  
+  footer: { padding: 40, gap: 16 },
+  takeBtn: { backgroundColor: '#fff', height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', elevation: 5 },
+  takeBtnText: { color: '#EF4444', fontSize: 20, fontWeight: '900' },
+  snoozeBtn: { backgroundColor: 'rgba(0,0,0,0.3)', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center' },
+  snoozeBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+});

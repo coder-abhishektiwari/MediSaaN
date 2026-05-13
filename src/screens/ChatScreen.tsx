@@ -10,7 +10,6 @@ import { chatWithBot } from '../api/groq';
 import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
 import { STTService } from '../services/STTService';
-import Voice from '@react-native-voice/voice';
 import { createSession, saveMessage, getMessages, getLastSession } from '../db/queries/chat';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
 import dayjs from 'dayjs';
@@ -260,7 +259,7 @@ const vo = StyleSheet.create({
 interface VoiceModalProps {
   visible: boolean;
   onClose: () => void;
-  onSend: (text: string) => void;
+  onSend: (text: string) => Promise<string | null>;
   language: string;
   locale: string;
   patientName: string;
@@ -272,38 +271,47 @@ function VoiceModal({ visible, onClose, onSend, language, locale, patientName }:
   const [transcript, setTranscript] = useState('');
   const isSpeaking = useRef(false);
 
- useEffect(() => {
-  // Listeners set karo
-  Voice.onSpeechStart          = () => setVoiceState('listening');
-  Voice.onSpeechEnd            = () => setVoiceState('processing');
-  Voice.onSpeechError          = () => setVoiceState('idle');
-  Voice.onSpeechResults        = (e: any) => {
-    const text = e.value?.[0] ?? '';
-    if (!text) { setVoiceState('idle'); return; }
-    setTranscript(text);
-    setVoiceState('processing');
-    onSend(text);
-  };
-  Voice.onSpeechPartialResults = (e: any) => {
-    const partial = e.value?.[0] ?? '';
-    if (partial) setTranscript(partial);
-  };
+  useEffect(() => {
+    STTService.onSpeechStart          = () => setVoiceState('listening');
+    STTService.onSpeechEnd            = () => setVoiceState('processing');
+    STTService.onSpeechError          = () => setVoiceState('idle');
+    STTService.onSpeechResults        = async (e: any) => {
+      const text = e.value?.[0] ?? '';
+      if (!text) { setVoiceState('idle'); return; }
+      setTranscript(text);
+      setVoiceState('processing');
+      const reply = await onSend(text);
+      if (reply) {
+        setVoiceState('speaking');
+        isSpeaking.current = true;
+        TTSService.speak(reply);
+      } else {
+        setVoiceState('idle');
+      }
+    };
 
-  return () => {
-    // ✅ removeAllListeners() mat use karo — wo null set karta hai aur crash hota hai
-    // Sirf callbacks ko no-op se override karo
-    try {
-      Voice.onSpeechStart          = () => {};
-      Voice.onSpeechEnd            = () => {};
-      Voice.onSpeechError          = () => {};
-      Voice.onSpeechResults        = () => {};
-      Voice.onSpeechPartialResults = () => {};
-      Voice.stop().catch(() => {});
-    } catch {}
-  };
-}, [onSend]);
+    return () => {
+      try {
+        STTService.onSpeechStart          = () => {};
+        STTService.onSpeechEnd            = () => {};
+        STTService.onSpeechError          = () => {};
+        STTService.onSpeechResults        = () => {};
+        STTService.stop();
+      } catch {}
+    };
+  }, [onSend]);
 
   // ── Auto-start listening when modal opens ──────────────────
+  useEffect(() => {
+    TTSService.onFinish(() => {
+      if (isSpeaking.current && visible) {
+        isSpeaking.current = false;
+        startListening();
+      }
+    });
+    return () => TTSService.removeFinishListener();
+  }, [visible]);
+
   useEffect(() => {
     if (visible) {
       setTranscript('');
@@ -320,17 +328,17 @@ function VoiceModal({ visible, onClose, onSend, language, locale, patientName }:
     if (isSpeaking.current) { TTSService.stop(); isSpeaking.current = false; }
     setTranscript('');
     try {
-      await Voice.stop(); // ensure clean state
-      await Voice.start(locale);
+      await STTService.stop();
+      await STTService.start(locale);
       setVoiceState('listening');
     } catch (e) {
-      console.warn('Voice.start error', e);
+      console.warn('STTService.start error', e);
       setVoiceState('idle');
     }
   }, [locale]);
 
   const stopListeningNow = useCallback(async () => {
-    try { await Voice.stop(); } catch { }
+    try { await STTService.stop(); } catch { }
     setVoiceState('idle');
   }, []);
 
@@ -562,9 +570,9 @@ export default function ChatScreen({ navigation }: any) {
   const scrollToEnd = () =>
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (text: string, isVoiceMode = false) => {
     const trimmed = text.trim();
-    if (!trimmed || !patient || loading) return;
+    if (!trimmed || !patient || loading) return null;
     setInput('');
     const userMsg: ChatMessage = {
       id: Date.now().toString(), role: 'user',
@@ -575,17 +583,17 @@ export default function ChatScreen({ navigation }: any) {
     scrollToEnd();
     setLoading(true);
     try {
-      const ctx = buildPatientContext(patient, language);
+      let ctx = buildPatientContext(patient, language);
       const history = [...messages, userMsg].slice(-10).map(m => ({ role: m.role, content: m.content }));
-      const reply = await chatWithBot(history as any, ctx);
+      const reply = await chatWithBot(history as any, ctx, isVoiceMode);
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(), role: 'assistant',
         content: reply, time: dayjs().format('hh:mm A'),
       };
       setMessages(prev => [...prev, botMsg]);
       if (sessionId) saveMessage(sessionId, 'assistant', reply);
-      // ✅ NO auto TTS — removed intentionally
       scrollToEnd();
+      return reply;
     } catch {
       const errMsg: ChatMessage = {
         id: (Date.now() + 1).toString(), role: 'assistant',
@@ -593,6 +601,7 @@ export default function ChatScreen({ navigation }: any) {
         time: dayjs().format('hh:mm A'),
       };
       setMessages(prev => [...prev, errMsg]);
+      return 'Sorry, I could not respond due to an error.';
     } finally {
       setLoading(false);
     }
@@ -604,10 +613,13 @@ export default function ChatScreen({ navigation }: any) {
       setIsListening(false);
     } else {
       setIsListening(true);
-      STTService.start(locale, (text) => {
+      STTService.onSpeechResults = (e: any) => {
         setIsListening(false);
-        sendMessage(text);
-      }, () => setIsListening(false));
+        const text = e.value?.[0];
+        if (text) sendMessage(text);
+      };
+      STTService.onSpeechError = () => setIsListening(false);
+      STTService.start(locale);
     }
   };
 
@@ -712,10 +724,12 @@ export default function ChatScreen({ navigation }: any) {
       {/* ── Full Screen Voice Modal ── */}
       <VoiceModal
         visible={voiceModalVisible}
-        onClose={() => setVoiceModalVisible(false)}
-        onSend={(text) => {
+        onClose={() => {
           setVoiceModalVisible(false);
-          sendMessage(text);
+          TTSService.stop();
+        }}
+        onSend={async (text) => {
+          return await sendMessage(text, true);
         }}
         language={language}
         locale={locale}

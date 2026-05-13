@@ -7,9 +7,7 @@ export function useReminders() {
     for (const med of medicines) {
       const doseTimes = JSON.parse(med.dose_times || '[]');
       for (const time of doseTimes) {
-        await NotificationService.scheduleMedicineReminder(
-          med.id, med.name, med.dose_amount + ' ' + med.dose_unit, time, true
-        );
+        await NotificationService.scheduleMedicineReminder(med, time, true);
       }
     }
   };

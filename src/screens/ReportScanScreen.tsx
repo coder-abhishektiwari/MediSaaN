@@ -6,6 +6,7 @@ import {
 import { useIsFocused } from '@react-navigation/native';
 import { Camera, useCameraDevice, useCameraPermission, type CameraRef } from 'react-native-vision-camera';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { useTranslation } from 'react-i18next';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { analyzeReport } from '../api/gemini';
@@ -13,7 +14,7 @@ import { saveScanResult, markScanAsSaved } from '../db/queries/reports';
 import { compressAndEncode, savePermanentImage } from '../utils/imageUtils';
 import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
-import { colors, typography, spacing, borderRadius, sizes, statusColors, severityColors } from '../theme';
+import { colors, typography, spacing, borderRadius, sizes, statusColors } from '../theme';
 
 // ─── Stage messages per language ─────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ const STAGE_MESSAGES: Record<string, Record<LangCode, { label: string; sub: stri
     ta: { label: 'அறிக்கை படிக்கப்படுகிறது…',  sub: 'சோதனை மதிப்புகள் பகுப்பாய்வு செய்யப்படுகின்றன', voice: 'உங்கள் அறிக்கை படிக்கப்படுகிறது மற்றும் சோதனை மதிப்புகள் பகுப்பாய்வு செய்யப்படுகின்றன.' },
     te: { label: 'నివేదిక చదువుతున్నారు…',      sub: 'పరీక్ష విలువలు మరియు పారామీటర్లు విశ్లేషిస్తున్నారు', voice: 'మీ నివేదిక చదువుతున్నారు మరియు పరీక్ష విలువలు విశ్లేషిస్తున్నారు.' },
     mr: { label: 'अहवाल वाचत आहोत…',          sub: 'चाचणी मूल्ये आणि पॅरामीटर्स विश्लेषण होत आहे', voice: 'तुमचा अहवाल वाचत आहोत आणि चाचणी मूल्यांचे विश्लेषण होत आहे.' },
-    gu: { label: 'રિપોર્ટ વાંચી રહ્યા છીએ…',   sub: 'ટેસ્ટ મૂલ્યો અને પૅરામીટર્સ વિશ્લેષણ થઈ રહ્યું છે', voice: 'રિપોર્ટ વાંચી રહ્યા છીએ અને ટેસ્ટ મૂલ્યોનું વિશ્લેષણ થઈ રહ્યું છે.' },
+    gu: { label: 'રિપોર્ટ વાંચી રહ્યા છીએ…',   sub: 'ટેસ્ટ મૂલ્યો અને પૅરાమీટર્સ વિશ્લેષણ થઈ રહ્યું છે', voice: 'રિપોર્ટ વાંચી રહ્યા છીએ आणि ટેસ્ટ મૂલ્યોનું વિશ્લેષણ થઈ રહ્યું છે.' },
   },
 };
 
@@ -180,8 +181,9 @@ const SEVERITY_COLORS: Record<string, string> = {
   needs_attention: colors.danger, urgent: '#922B21',
 };
 
-function ParameterRow({ param }: { param: any }) {
+function ParameterRow({ param, t }: { param: any; t: any }) {
   const sc = statusColors[param.status as keyof typeof statusColors] || statusColors.normal;
+  const statusLabel = param.status === 'normal' ? t('status_normal') : param.status === 'high' ? t('status_high') : param.status === 'low' ? t('status_low') : param.status;
   return (
     <View style={pr.row}>
       <View style={pr.left}>
@@ -190,10 +192,10 @@ function ParameterRow({ param }: { param: any }) {
       </View>
       <View style={pr.mid}>
         <Text style={pr.value}>{param.value} {param.unit}</Text>
-        <Text style={pr.range}>Normal: {param.normal_range}</Text>
+        <Text style={pr.range}>{t('normal_range')}: {param.normal_range}</Text>
       </View>
       <View style={[pr.badge, { backgroundColor: sc.bg, borderColor: sc.border }]}>
-        <Text style={[pr.badgeText, { color: sc.text }]}>{param.status?.toUpperCase()}</Text>
+        <Text style={[pr.badgeText, { color: sc.text }]}>{statusLabel?.toUpperCase()}</Text>
       </View>
     </View>
   );
@@ -240,6 +242,7 @@ type FrameState      = 'empty' | 'candidate' | 'invalid';
 type ProcessingStage = 'idle' | 'capturing' | 'validating' | 'processing';
 
 export default function ReportScanScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const device      = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
   const camera = useRef<CameraRef>(null);
@@ -256,12 +259,11 @@ export default function ReportScanScreen({ navigation }: any) {
   const [isSavedToProfile, setIsSavedToProfile] = useState(false);
   const [loading, setLoading]                 = useState(false);
   const [showDetailed, setShowDetailed]       = useState(false);
-  const [scanStatus, setScanStatus]           = useState('Place a medical report in the frame');
+  const [scanStatus, setScanStatus]           = useState(t('report_scan_instruction'));
   const [frameState, setFrameState]           = useState<FrameState>('empty');
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
   const isScanningRef = useRef(false);
 
-  // Camera lifecycle — off when not needed or unfocused
   useEffect(() => {
     if (!isFocused || !!result) TTSService.stop();
     return () => TTSService.stop();
@@ -271,7 +273,6 @@ export default function ReportScanScreen({ navigation }: any) {
     setIsCameraActive(!result && !askMorePages && !loading);
   }, [result, askMorePages, loading]);
 
-  // Voice on each stage transition
   useEffect(() => {
     if (processingStage === 'idle') return;
     const msg = getMsg(processingStage, language);
@@ -283,7 +284,7 @@ export default function ReportScanScreen({ navigation }: any) {
     try {
       setLoading(true);
       setProcessingStage('capturing');
-      setScanStatus('Capturing…');
+      setScanStatus(t('loading'));
       const photo = await camera.current.takePhoto({ flash: 'off', enableShutterSound: true });
       const uri = 'file://' + photo.path;
       setImages(prev => [...prev, uri]);
@@ -294,13 +295,13 @@ export default function ReportScanScreen({ navigation }: any) {
       setLoading(false);
       setProcessingStage('idle');
     }
-  }, []);
+  }, [t]);
 
   const reset = () => {
     setResult(null);
     setImages([]);
     setFrameState('empty');
-    setScanStatus('Place a medical report in the frame');
+    setScanStatus(t('report_scan_instruction'));
     setIsCameraActive(true);
     setCurrentScanId(null);
     setIsSavedToProfile(false);
@@ -312,7 +313,7 @@ export default function ReportScanScreen({ navigation }: any) {
       markScanAsSaved(currentScanId, newState);
       setIsSavedToProfile(newState);
       if (newState) {
-        Alert.alert('Success', 'Report added to your profile and AI context.');
+        Alert.alert(t('done'), t('save_report'));
       }
     }
   };
@@ -327,34 +328,33 @@ export default function ReportScanScreen({ navigation }: any) {
   };
 
   const analyze = useCallback(async (imgs: string[], silentNotReport = false, encodedImages?: string[]) => {
-    if (!patient) { Alert.alert('Error', 'Patient profile not found.'); return; }
+    if (!patient) { Alert.alert(t('error_generic'), t('note_empty')); return; }
     setAskMorePages(false);
     setLoading(true);
     setProcessingStage('validating');
     try {
-      setScanStatus('Validating report…');
+      setScanStatus(t('loading'));
       const permUris = await Promise.all(imgs.map(uri => savePermanentImage(uri)));
       const encoded = encodedImages || await Promise.all(permUris.map(uri => compressAndEncode(uri)));
       const ctx  = buildPatientContext(patient, language);
       const data = await analyzeReport(encoded, ctx);
 
       if (!data.is_report) {
-        const message = data.not_report_message || 'This is not a report. Please align properly.';
+        const message = data.not_report_message || t('error_generic');
         setFrameState('invalid');
         setScanStatus(message);
         TTSService.speak(message);
-        if (!silentNotReport) Alert.alert('Not a Report', message);
+        if (!silentNotReport) Alert.alert(t('error_generic'), message);
         return;
       }
 
-      // If valid, show processing for a moment
       setProcessingStage('processing');
-      setScanStatus('Reading your report…');
+      setScanStatus(t('reading_report'));
       await new Promise(r => setTimeout(r, 1000));
 
       setResult(data);
       setFrameState('candidate');
-      setScanStatus('Report detected');
+      setScanStatus(t('status_normal'));
       TTSService.speak(data.simple_verdict);
       if (patient.id) {
         const id = saveScanResult(patient.id, 'report', permUris[0], JSON.stringify(data), data.severity || 'normal', false);
@@ -363,18 +363,18 @@ export default function ReportScanScreen({ navigation }: any) {
       }
     } catch (e: any) {
       if (!silentNotReport) {
-        const msg = e.message || 'Could not analyze report. Please try with a clearer photo.';
-        Alert.alert('Analysis Failed', msg);
+        const msg = e.message || t('error_generic');
+        Alert.alert(t('error_generic'), msg);
         TTSService.speak(msg);
       }
       setFrameState('invalid');
-      setScanStatus('Keep the report flat and inside the frame');
+      setScanStatus(t('report_scan_instruction'));
     } finally {
       setLoading(false);
       setProcessingStage('idle');
       isScanningRef.current = false;
     }
-  }, [language, patient]);
+  }, [language, patient, t]);
 
   const handleScanAgain = () => {
     reset();
@@ -385,10 +385,10 @@ export default function ReportScanScreen({ navigation }: any) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.permWrap}>
           <Text style={styles.permEmoji}>📋</Text>
-          <Text style={styles.permTitle}>Camera Permission Needed</Text>
-          <Text style={styles.permSub}>To analyze reports, please allow camera access.</Text>
+          <Text style={styles.permTitle}>{t('perm_camera')}</Text>
+          <Text style={styles.permSub}>{t('perm_camera_sub')}</Text>
           <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-            <Text style={styles.permBtnText}>Allow Camera</Text>
+            <Text style={styles.permBtnText}>{t('perm_allow')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -403,7 +403,6 @@ export default function ReportScanScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Camera — only when needed */}
       {device && isCameraActive && (
         <Camera
           ref={camera}
@@ -414,7 +413,6 @@ export default function ReportScanScreen({ navigation }: any) {
         />
       )}
 
-      {/* Scanner UI */}
       {!result && !askMorePages && !loading && (
         <>
           <View style={styles.overlayTop}>
@@ -424,7 +422,7 @@ export default function ReportScanScreen({ navigation }: any) {
                   <Text style={styles.closeBtnText}>✕</Text>
                 </TouchableOpacity>
                 <Text style={styles.topTitle}>
-                  Scan Report{images.length > 0 ? ` (${images.length} page${images.length > 1 ? 's' : ''})` : ''}
+                  {t('report_analyze')}{images.length > 0 ? ` (${images.length})` : ''}
                 </Text>
                 <View style={{ width: 44 }} />
               </View>
@@ -452,7 +450,7 @@ export default function ReportScanScreen({ navigation }: any) {
             <View style={styles.controls}>
               <TouchableOpacity onPress={handleGallery} style={styles.sideBtn}>
                 <Text style={styles.sideBtnIcon}>🖼</Text>
-                <Text style={styles.sideBtnLabel}>Gallery</Text>
+                <Text style={styles.sideBtnLabel}>{t('gallery')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleCapture} style={styles.captureBtn}>
                 <View style={styles.captureBtnInner} />
@@ -463,31 +461,28 @@ export default function ReportScanScreen({ navigation }: any) {
         </>
       )}
 
-      {/* Full-screen animated scanning overlay */}
       {loading && processingStage !== 'idle' && (
         <ScanningOverlay stage={processingStage} lang={language} />
       )}
 
-      {/* Multi-page prompt */}
       {askMorePages && (
         <View style={styles.morePageOverlay}>
           <View style={styles.morePageBox}>
             <Text style={styles.morePageEmoji}>📄</Text>
-            <Text style={styles.morePageTitle}>Are there more pages?</Text>
-            <Text style={styles.morePageSub}>Page {images.length} captured. Add more or analyze now.</Text>
+            <Text style={styles.morePageTitle}>{t('more_pages')}</Text>
+            <Text style={styles.morePageSub}>{images.length} {t('pages')}</Text>
             <View style={styles.morePageBtns}>
               <TouchableOpacity style={styles.morePageYes} onPress={() => setAskMorePages(false)}>
-                <Text style={styles.morePageYesText}>📷 Add Page</Text>
+                <Text style={styles.morePageYesText}>📷 {t('yes')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.morePageNo} onPress={() => analyze(images)}>
-                <Text style={styles.morePageNoText}>✓ Analyze Now</Text>
+                <Text style={styles.morePageNoText}>✓ {t('no')}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       )}
 
-      {/* Simple result sheet */}
       {result && !showDetailed && (
         <View style={styles.resultOverlay}>
           <SafeAreaView style={{ flex: 1 }} />
@@ -504,10 +499,10 @@ export default function ReportScanScreen({ navigation }: any) {
             </View>
             <View style={styles.simpleActions}>
               <TouchableOpacity style={[styles.speakBtn, isSavedToProfile && { backgroundColor: colors.success }]} onPress={toggleSaveReport}>
-                <Text style={styles.speakBtnText}>{isSavedToProfile ? '✓ Saved to Profile' : '➕ Add to My Record'}</Text>
+                <Text style={styles.speakBtnText}>{isSavedToProfile ? t('done') : `➕ ${t('save_report')}`}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.moreBtn} onPress={() => setShowDetailed(true)}>
-                <Text style={styles.moreBtnText}>Full Report →</Text>
+                <Text style={styles.moreBtnText}>{t('full_report')} →</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={styles.scanAgainBtn} onPress={handleScanAgain}>

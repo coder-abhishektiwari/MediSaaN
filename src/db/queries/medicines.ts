@@ -16,8 +16,8 @@ export function getMedicines(patientId: number) {
 
 export function updateMedicine(id: number, data: any) {
   db.execute(
-    `UPDATE medicines SET name=?, generic_name=?, dose_amount=?, dose_unit=?, times_per_day=?, dose_times=?, days_type=?, custom_days=?, start_date=?, end_date=?, stock_quantity=?, notes=? WHERE id=?`,
-    [data.name, data.generic_name, data.dose_amount, data.dose_unit, data.times_per_day, JSON.stringify(data.dose_times), data.days_type, JSON.stringify(data.custom_days), data.start_date, data.end_date, data.stock_quantity, data.notes, id]
+    `UPDATE medicines SET name=?, generic_name=?, image_path=?, dose_amount=?, dose_unit=?, times_per_day=?, dose_times=?, days_type=?, custom_days=?, start_date=?, end_date=?, stock_quantity=?, notes=? WHERE id=?`,
+    [data.name, data.generic_name, data.image_path, data.dose_amount, data.dose_unit, data.times_per_day, JSON.stringify(data.dose_times), data.days_type, JSON.stringify(data.custom_days), data.start_date, data.end_date, data.stock_quantity, data.notes, id]
   );
 }
 
@@ -30,7 +30,8 @@ export function deleteMedicineByName(patientId: number, name: string) {
 }
 
 export function logReminderAction(medicineId: number, scheduledTime: string, action: string) {
-  db.execute('INSERT INTO reminder_logs (medicine_id, scheduled_time, action) VALUES (?, ?, ?)', [medicineId, scheduledTime, action]);
+  const now = new Date().toISOString();
+  db.execute('INSERT INTO reminder_logs (medicine_id, scheduled_time, action, action_time) VALUES (?, ?, ?, ?)', [medicineId, scheduledTime, action, now]);
 }
 
 export function getTodayLogs(patientId: number) {

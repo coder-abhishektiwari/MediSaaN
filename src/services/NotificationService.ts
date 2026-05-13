@@ -1,6 +1,7 @@
 import notifee, {
   AndroidImportance,
   AndroidVisibility,
+  AndroidCategory,
   TriggerType,
   RepeatFrequency,
   AuthorizationStatus,
@@ -15,19 +16,66 @@ export class NotificationService {
 
   static async createChannel() {
     await notifee.createChannel({
-      id: 'medisaan_reminders',
-      name: 'Medicine Reminders',
-      sound: 'default',
+      id: 'medisaan_alarms',
+      name: 'Critical Medicine Alarms',
+      sound: 'default', 
       importance: AndroidImportance.HIGH,
       visibility: AndroidVisibility.PUBLIC,
       vibration: true,
+      fullScreenAction: true,
     });
   }
 
+  static async isBatteryOptimizationEnabled(): Promise<boolean> {
+    const settings = await notifee.getPowerManagerInfo();
+    return settings.batteryOptimizationEnabled || false;
+  }
+
+  static async openBatteryOptimizationSettings() {
+    await notifee.openBatteryOptimizationSettings();
+  }
+
+  static async scheduleOneTimeAlarm(medicine: any, scheduledTime: string, delayMinutes: number) {
+    const triggerDate = dayjs().add(delayMinutes, 'minute');
+    const notifId = `snooze_${medicine.id}_${Date.now()}`;
+
+    await notifee.createTriggerNotification(
+      {
+        id: notifId,
+        title: `⏰ SNOOZE: ${medicine.name}`,
+        body: `Follow-up reminder for your dose`,
+        data: {
+          medicine: JSON.stringify(medicine),
+          scheduledTime: scheduledTime,
+          type: 'alarm',
+          isSnooze: 'true'
+        },
+        android: {
+          channelId: 'medisaan_alarms',
+          importance: AndroidImportance.HIGH,
+          priority: 'high',
+          category: AndroidCategory.ALARM,
+          ongoing: true,
+          autoCancel: false,
+          color: '#3B82F6',
+          visibility: AndroidVisibility.PUBLIC,
+          fullScreenAction: {
+            id: 'default',
+            mainComponent: 'MediSaaN',
+          },
+          pressAction: { id: 'default' },
+        },
+      },
+      {
+        type: TriggerType.TIMESTAMP,
+        timestamp: triggerDate.valueOf(),
+        alarmManager: { allowWhileIdle: true },
+      },
+    );
+  }
+
   static async scheduleMedicineReminder(
-    medicineId: number,
-    medicineName: string,
-    dose: string,
+    medicine: any,
     timeStr: string,
     repeatDaily: boolean,
   ) {
@@ -37,36 +85,54 @@ export class NotificationService {
       triggerDate = triggerDate.add(1, 'day');
     }
 
-    const notifId = `med_${medicineId}_${timeStr.replace(':', '')}`;
+    const notifId = `med_${medicine.id}_${timeStr.replace(':', '')}`;
+    const title = `💊 MEDICINE ALARM: ${medicine.name}`;
+    const body = `URGENT: Time to take your ${medicine.dose_amount} ${medicine.dose_unit}`;
 
-    await notifee.createTriggerNotification(
-      {
-        id: notifId,
-        title: `💊 ${medicineName}`,
-        body: `Dose: ${dose} — Time to take your medicine`,
-        android: {
-          channelId: 'medisaan_reminders',
-          importance: AndroidImportance.HIGH,
-          pressAction: { id: 'default' },
-          actions: [
-            { title: '✅ Taken',    pressAction: { id: 'taken' } },
-            { title: '⏭ Skip',     pressAction: { id: 'skipped' } },
-            { title: '⏰ 10 min',   pressAction: { id: 'snooze' } },
-          ],
+    const { MediSaaNNativeModule } = require('react-native').NativeModules;
+    
+    if (MediSaaNNativeModule) {
+      // Use native AlarmManager for 100% reliable wake-ups
+      await MediSaaNNativeModule.scheduleAlarm(notifId, triggerDate.valueOf(), title, body);
+    } else {
+      // Fallback to notifee if module is missing
+      await notifee.createTriggerNotification(
+        {
+          id: notifId,
+          title, body,
+          data: {
+            medicine: JSON.stringify(medicine),
+            scheduledTime: timeStr,
+            type: 'alarm'
+          },
+          android: {
+            channelId: 'medisaan_alarms',
+            importance: AndroidImportance.HIGH,
+            priority: 'high',
+            category: AndroidCategory.ALARM,
+            ongoing: true,
+            autoCancel: false,
+            color: '#EF4444',
+            visibility: AndroidVisibility.PUBLIC,
+            fullScreenAction: { id: 'default', mainComponent: 'MediSaaN' },
+            pressAction: { id: 'default' },
+            vibrationPattern: [300, 500, 300, 500],
+          },
         },
-      },
-      {
-        type: TriggerType.TIMESTAMP,
-        timestamp: triggerDate.valueOf(),
-        repeatFrequency: repeatDaily ? RepeatFrequency.DAILY : undefined,
-      },
-    );
+        {
+          type: TriggerType.TIMESTAMP,
+          timestamp: triggerDate.valueOf(),
+          repeatFrequency: repeatDaily ? RepeatFrequency.DAILY : undefined,
+          alarmManager: { allowWhileIdle: true },
+        },
+      );
+    }
   }
 
   static async cancelMedicineReminders(medicineId: number) {
     const notifications = await notifee.getTriggerNotifications();
     for (const n of notifications) {
-      if (n.notification.id?.startsWith(`med_${medicineId}_`)) {
+      if (n.notification.id?.startsWith(`med_${medicineId}_`) || n.notification.id?.startsWith(`snooze_${medicineId}_`)) {
         await notifee.cancelTriggerNotification(n.notification.id);
       }
     }

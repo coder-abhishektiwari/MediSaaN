@@ -4,7 +4,7 @@ import {
   TextInput, StatusBar, SafeAreaView, Alert, Switch,
 } from 'react-native';
 import { usePatientStore } from '../store/patientStore';
-import { addMedicine } from '../db/queries/medicines';
+import { addMedicine, updateMedicine } from '../db/queries/medicines';
 import { useReminders } from '../hooks/useReminders';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
 import dayjs from 'dayjs';
@@ -32,22 +32,26 @@ const tb = StyleSheet.create({
   edit: { fontSize: 14 },
 });
 
-export default function AddMedicineScreen({ navigation }: any) {
+export default function AddMedicineScreen({ navigation, route }: any) {
   const { patient } = usePatientStore();
-  const { scheduleAll } = useReminders();
+  const { scheduleAll, cancelAll } = useReminders();
+  const initialData = route.params?.initialData;
+  const editMed = route.params?.editMedicine;
 
-  const [name, setName]         = useState('');
-  const [genericName, setGen]   = useState('');
-  const [doseAmt, setDoseAmt]   = useState('1');
-  const [unit, setUnit]         = useState('tablet');
-  const [timesPerDay, setTPD]   = useState(1);
-  const [doseTimes, setDTimes]  = useState(['08:00']);
-  const [daysType, setDaysType] = useState('daily');
-  const [customDays, setCDays]  = useState<string[]>([]);
-  const [startDate]             = useState(dayjs().format('YYYY-MM-DD'));
-  const [hasEndDate, setHasEnd] = useState(false);
-  const [stock, setStock]       = useState('30');
-  const [notes, setNotes]       = useState('');
+  const [name, setName]         = useState(editMed?.name || initialData?.name || '');
+  const [genericName, setGen]   = useState(editMed?.generic_name || initialData?.generic_name || '');
+  const [doseAmt, setDoseAmt]   = useState(editMed?.dose_amount?.toString() || '1');
+  const [unit, setUnit]         = useState(editMed?.dose_unit || initialData?.dose_unit || 'tablet');
+  const [timesPerDay, setTPD]   = useState(editMed?.times_per_day || 1);
+  const [doseTimes, setDTimes]  = useState(editMed ? JSON.parse(editMed.dose_times) : ['08:00']);
+  const [daysType, setDaysType] = useState(editMed?.days_type || 'daily');
+  const [customDays, setCDays]  = useState<string[]>(editMed ? JSON.parse(editMed.custom_days) : []);
+  const [startDate]             = useState(editMed?.start_date || dayjs().format('YYYY-MM-DD'));
+  const [hasEndDate, setHasEnd] = useState(!!editMed?.end_date);
+  const [stock, setStock]       = useState(editMed?.stock_quantity?.toString() || '30');
+  const [notes, setNotes]       = useState(editMed?.notes || initialData?.notes || '');
+  const [imagePath, setImage]   = useState(editMed?.image_path || initialData?.image_path || '');
+  const [scanCache, setCache]   = useState(editMed?.scan_cache_json || initialData?.scan_cache_json || '');
   const [saving, setSaving]     = useState(false);
 
   const setTimesCount = (count: number) => {
@@ -67,19 +71,39 @@ export default function AddMedicineScreen({ navigation }: any) {
     if (!patient?.id) { Alert.alert('Error', 'Patient profile not found.'); return; }
     setSaving(true);
     try {
-      const id = addMedicine({
-        patient_id: patient.id, name: name.trim(), generic_name: genericName.trim(),
-        dose_amount: parseFloat(doseAmt) || 1, dose_unit: unit,
-        times_per_day: timesPerDay, dose_times: doseTimes,
-        days_type: daysType, custom_days: customDays,
-        start_date: startDate, end_date: null,
-        stock_quantity: parseInt(stock) || 0, notes: notes.trim(),
-      });
-      const med = { id, name: name.trim(), dose_amount: doseAmt, dose_unit: unit, dose_times: JSON.stringify(doseTimes) };
-      await scheduleAll([med]);
-      Alert.alert('✅ Saved', `${name} added successfully!`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
-    } catch (e) {
-      Alert.alert('Error', 'Could not save medicine. Please try again.');
+      if (editMed) {
+        // Update mode
+        updateMedicine(editMed.id, {
+          name: name.trim(), generic_name: genericName.trim(),
+          image_path: imagePath,
+          dose_amount: parseFloat(doseAmt) || 1, dose_unit: unit,
+          times_per_day: timesPerDay, dose_times: doseTimes,
+          days_type: daysType, custom_days: customDays,
+          start_date: startDate, end_date: null,
+          stock_quantity: parseInt(stock) || 0, notes: notes.trim(),
+        });
+        await cancelAll(editMed.id); // Refresh reminders
+        const med = { id: editMed.id, name: name.trim(), dose_amount: doseAmt, dose_unit: unit, dose_times: JSON.stringify(doseTimes) };
+        await scheduleAll([med]);
+        Alert.alert('✅ Updated', `${name} updated successfully!`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+      } else {
+        // Add mode
+        const id = addMedicine({
+          patient_id: patient.id, name: name.trim(), generic_name: genericName.trim(),
+          image_path: imagePath,
+          dose_amount: parseFloat(doseAmt) || 1, dose_unit: unit,
+          times_per_day: timesPerDay, dose_times: doseTimes,
+          days_type: daysType, custom_days: customDays,
+          start_date: startDate, end_date: null,
+          stock_quantity: parseInt(stock) || 0, notes: notes.trim(),
+          scan_cache_json: scanCache,
+        });
+        const med = { id, name: name.trim(), dose_amount: doseAmt, dose_unit: unit, dose_times: JSON.stringify(doseTimes) };
+        await scheduleAll([med]);
+        Alert.alert('✅ Saved', `${name} added successfully!`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+      }
+    } catch (e: any) {
+      Alert.alert('Error', `Could not save medicine: ${e.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }

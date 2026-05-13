@@ -174,9 +174,13 @@ export default function MedicineHistoryScreen({ navigation }: any) {
         <View style={styles.logMain}>
           <View style={styles.logHeader}>
             <Text style={styles.medName} numberOfLines={1}>{item.medicine_name}</Text>
-            <Text style={styles.logTime}>{dayjs(item.action_time).format('hh:mm A')}</Text>
+            <Text style={styles.logTime}>{item.scheduled_time}</Text>
           </View>
-          <Text style={styles.logDetails} numberOfLines={1}>Sched: {item.scheduled_time} · {statusText}</Text>
+          <Text style={styles.logDetails} numberOfLines={1}>
+            {isTaken ? `Taken at ${dayjs(item.action_time).format('hh:mm A')}` : 
+             isSkipped ? `Skipped at ${dayjs(item.action_time).format('hh:mm A')}` : 
+             `Missed (Window Closed)`}
+          </Text>
         </View>
         <View style={[styles.badge, { backgroundColor: color + '10', borderColor: color }]}>
           <Text style={[styles.badgeText, { color }]}>{statusText}</Text>
@@ -216,7 +220,7 @@ export default function MedicineHistoryScreen({ navigation }: any) {
           <View style={[styles.insightEmojiBg, { backgroundColor: stats.feedback.color + '15' }]}><Text style={styles.insightEmoji}>{stats.feedback.emoji}</Text></View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.insightTitle, { color: stats.feedback.color }]}>{stats.feedback.title}</Text>
-            <Text style={styles.insightBody}>{stats.feedback.body}</Text>
+            <Text style={styles.feedbackBody}>{stats.feedback.body}</Text>
           </View>
         </View>
       )}

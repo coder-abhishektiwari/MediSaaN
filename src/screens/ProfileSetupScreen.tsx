@@ -6,18 +6,21 @@ import {
 import { usePatientStore, Patient } from '../store/patientStore';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
 import { db } from '../db/schema';
+import { useTranslation } from 'react-i18next';
 
 const CONDITIONS = ['Diabetes', 'BP', 'Heart Disease', 'Thyroid', 'Kidney', 'Asthma', 'Arthritis', 'Other'];
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
-const GENDERS = [
-  { key: 'male', label: '👨 Male' },
-  { key: 'female', label: '👩 Female' },
-  { key: 'other', label: '🧑 Other' },
-];
 
 export default function ProfileSetupScreen({ navigation }: any) {
   const { setPatient } = usePatientStore();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
+
+  const GENDERS = [
+    { key: 'male', label: `👨 ${t('male')}` },
+    { key: 'female', label: `👩 ${t('female')}` },
+    { key: 'other', label: `🧑 ${t('other')}` },
+  ];
 
   const [name, setName]         = useState('');
   const [age, setAge]           = useState('');
@@ -36,7 +39,7 @@ export default function ProfileSetupScreen({ navigation }: any) {
 
   const goNext = () => {
     if (step === 1 && !name.trim()) {
-      Alert.alert('Required', 'Please enter your name.'); return;
+      Alert.alert(t('required'), t('required_name')); return;
     }
     if (step < 3) { setStep(s => s + 1); return; }
     save();
@@ -65,23 +68,23 @@ export default function ProfileSetupScreen({ navigation }: any) {
     navigation.replace('Main');
   };
 
-  const stepLabels = ['Basic Info', 'Health Info', 'Emergency Contact'];
+  const stepLabels = [t('step_basic'), t('step_health'), t('step_emergency')];
 
   const renderStep = () => {
     if (step === 1) return (
       <View style={styles.stepContent}>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Full Name *</Text>
+          <Text style={styles.fieldLabel}>{t('full_name_label')}</Text>
           <TextInput style={styles.input} value={name} onChangeText={setName}
-            placeholder="Enter your name" placeholderTextColor={colors.textMuted} />
+            placeholder={t('your_name')} placeholderTextColor={colors.textMuted} />
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Age</Text>
+          <Text style={styles.fieldLabel}>{t('your_age')}</Text>
           <TextInput style={styles.input} value={age} onChangeText={setAge}
-            placeholder="e.g. 65" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
+            placeholder={t('age_placeholder')} placeholderTextColor={colors.textMuted} keyboardType="numeric" />
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Gender</Text>
+          <Text style={styles.fieldLabel}>{t('your_gender')}</Text>
           <View style={styles.genderRow}>
             {GENDERS.map(g => (
               <TouchableOpacity key={g.key} style={[styles.genderBtn, gender === g.key && styles.genderBtnActive]}
@@ -92,12 +95,12 @@ export default function ProfileSetupScreen({ navigation }: any) {
           </View>
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>City / Village</Text>
+          <Text style={styles.fieldLabel}>{t('your_city')}</Text>
           <TextInput style={styles.input} value={city} onChangeText={setCity}
-            placeholder="Your city or village" placeholderTextColor={colors.textMuted} />
+            placeholder={t('city_placeholder')} placeholderTextColor={colors.textMuted} />
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Blood Group</Text>
+          <Text style={styles.fieldLabel}>{t('blood_group')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             <View style={styles.chipRow}>
               {BLOOD_GROUPS.map(bg => (
@@ -115,7 +118,7 @@ export default function ProfileSetupScreen({ navigation }: any) {
     if (step === 2) return (
       <View style={styles.stepContent}>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Health Conditions (select all that apply)</Text>
+          <Text style={styles.fieldLabel}>{t('health_conditions')} ({t('health_conditions_hint')})</Text>
           <View style={styles.condGrid}>
             {CONDITIONS.map(c => (
               <TouchableOpacity key={c} style={[styles.condChip, conditions.includes(c) && styles.condChipActive]}
@@ -126,9 +129,9 @@ export default function ProfileSetupScreen({ navigation }: any) {
           </View>
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Known Allergies</Text>
+          <Text style={styles.fieldLabel}>{t('allergies')}</Text>
           <TextInput style={[styles.input, styles.inputMulti]} value={allergies} onChangeText={setAllergy}
-            placeholder="e.g. Penicillin, Aspirin (or write None)"
+            placeholder={t('allergies_placeholder')}
             placeholderTextColor={colors.textMuted} multiline />
         </View>
       </View>
@@ -138,28 +141,28 @@ export default function ProfileSetupScreen({ navigation }: any) {
       <View style={styles.stepContent}>
         <View style={styles.infoCard}>
           <Text style={styles.infoText}>
-            This helps us alert your family if you miss medicines. This is optional.
+            {t('caregiver_info_box')}
           </Text>
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Caregiver / Family Name</Text>
+          <Text style={styles.fieldLabel}>{t('caregiver_name')}</Text>
           <TextInput style={styles.input} value={caregiverName} onChangeText={setCN}
-            placeholder="e.g. Rahul (son)" placeholderTextColor={colors.textMuted} />
+            placeholder={t('caregiver_name_placeholder')} placeholderTextColor={colors.textMuted} />
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Caregiver Phone</Text>
+          <Text style={styles.fieldLabel}>{t('caregiver_phone')}</Text>
           <TextInput style={styles.input} value={caregiverPhone} onChangeText={setCP}
-            placeholder="Mobile number" placeholderTextColor={colors.textMuted} keyboardType="phone-pad" />
+            placeholder={t('caregiver_phone_placeholder')} placeholderTextColor={colors.textMuted} keyboardType="phone-pad" />
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Doctor Name</Text>
+          <Text style={styles.fieldLabel}>{t('doctor_name')}</Text>
           <TextInput style={styles.input} value={doctorName} onChangeText={setDN}
-            placeholder="e.g. Dr. Sharma" placeholderTextColor={colors.textMuted} />
+            placeholder={t('doctor_name_placeholder')} placeholderTextColor={colors.textMuted} />
         </View>
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Doctor Phone</Text>
+          <Text style={styles.fieldLabel}>{t('doctor_phone')}</Text>
           <TextInput style={styles.input} value={doctorPhone} onChangeText={setDP}
-            placeholder="Doctor's number" placeholderTextColor={colors.textMuted} keyboardType="phone-pad" />
+            placeholder={t('doctor_phone_placeholder')} placeholderTextColor={colors.textMuted} keyboardType="phone-pad" />
         </View>
       </View>
     );
@@ -175,7 +178,7 @@ export default function ProfileSetupScreen({ navigation }: any) {
           ))}
         </View>
         <Text style={styles.stepLabel}>{stepLabels[step-1]}</Text>
-        <Text style={styles.stepCount}>Step {step} of 3</Text>
+        <Text style={styles.stepCount}>{t('step_of', { current: step, total: 3 })}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -185,12 +188,12 @@ export default function ProfileSetupScreen({ navigation }: any) {
       <View style={styles.footer}>
         {step > 1 && (
           <TouchableOpacity style={styles.backBtn} onPress={() => setStep(s => s - 1)}>
-            <Text style={styles.backBtnText}>← Back</Text>
+            <Text style={styles.backBtnText}>← {t('back')}</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity style={[styles.nextBtn, step === 1 && { flex: 1 }]} onPress={goNext}
           activeOpacity={0.85}>
-          <Text style={styles.nextBtnText}>{step < 3 ? 'Next →' : '✓ Save & Continue'}</Text>
+          <Text style={styles.nextBtnText}>{step < 3 ? `${t('next')} →` : `✓ ${t('save_continue')}`}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

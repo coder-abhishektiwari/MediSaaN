@@ -9,6 +9,7 @@ import { initDatabase } from '../db/schema';
 import { NotificationService } from '../services/NotificationService';
 import { initVolumeShortcuts } from '../services/VolumeShortcutService';
 import { TTSService } from '../services/TTSService';
+import notifee, { EventType } from '@notifee/react-native';
 
 import SplashScreen from '../screens/SplashScreen';
 import LanguagePickerScreen from '../screens/LanguagePickerScreen';
@@ -22,6 +23,9 @@ import MedicineHistoryScreen from '../screens/MedicineHistoryScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import HistoryDetailScreen from '../screens/HistoryDetailScreen';
 import MedicineInsightScreen from '../screens/MedicineInsightScreen';
+import AlarmScreen from '../screens/AlarmScreen';
+import PermissionScreen from '../screens/PermissionScreen';
+import { PermissionService } from '../services/PermissionService';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,13 +34,20 @@ export default function RootNavigator() {
   const { hasChosen, language } = useLanguageStore();
   const { shortcutsEnabled } = useSettingsStore();
   const [isReady, setIsReady] = useState(false);
+  const [needsPerms, setNeedsPerms] = useState(false);
 
   useEffect(() => {
     const setup = async () => {
       try {
         initDatabase();
         await NotificationService.createChannel();
-        await NotificationService.requestPermissions();
+        
+        // Permission Check
+        const perms = await PermissionService.checkAll();
+        if (!perms.camera || !perms.notifications) {
+          setNeedsPerms(true);
+        }
+
         await TTSService.init(language);
         initVolumeShortcuts(shortcutsEnabled);
       } catch (e) {
@@ -48,9 +59,39 @@ export default function RootNavigator() {
     setup();
   }, []);
 
+  useEffect(() => {
+    // Handle notification launch
+    notifee.getInitialNotification().then(notification => {
+      if (notification?.notification.data?.type === 'alarm') {
+        const data = notification.notification.data;
+        setTimeout(() => {
+          navigationRef.navigate('Alarm', {
+            medicine: JSON.parse(data.medicine as string),
+            scheduledTime: data.scheduledTime,
+            notificationId: notification.notification.id
+          });
+        }, 1000);
+      }
+    });
+
+    // Handle foreground notifications
+    return notifee.onForegroundEvent(({ type, detail }) => {
+      if (type === EventType.PRESS && detail.notification?.data?.type === 'alarm') {
+        const data = detail.notification.data;
+        navigationRef.navigate('Alarm', {
+          medicine: JSON.parse(data.medicine as string),
+          scheduledTime: data.scheduledTime,
+          notificationId: detail.notification.id
+        });
+      }
+    });
+  }, []);
+
   if (!isReady) return null;
 
-  const initialRoute = !hasChosen
+  const initialRoute = needsPerms
+    ? 'Permission'
+    : !hasChosen
     ? 'Language'
     : !isProfileComplete
     ? 'ProfileSetup'
@@ -60,6 +101,7 @@ export default function RootNavigator() {
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="Splash"        component={SplashScreen}       />
+        <Stack.Screen name="Permission"    component={PermissionScreen}   />
         <Stack.Screen name="Language"      component={LanguagePickerScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="ProfileSetup"  component={ProfileSetupScreen}  options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Main"          component={MainTabNavigator}    />
@@ -71,6 +113,7 @@ export default function RootNavigator() {
         <Stack.Screen name="ScanHistory"     component={HistoryScreen}         options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="HistoryDetail"   component={HistoryDetailScreen}   options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="MedicineInsight" component={MedicineInsightScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="Alarm"           component={AlarmScreen}           options={{ animation: 'slide_from_bottom' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

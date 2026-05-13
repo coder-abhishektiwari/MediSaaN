@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { MMKV } from 'react-native-mmkv';
+import i18n from '../utils/i18n';
 
 const storage = new MMKV({ id: 'language-store' });
 
@@ -41,6 +42,7 @@ export const useLanguageStore = create<LanguageStore>((set) => {
     setLanguage: (code: string) => {
       const found = LANGUAGES.find(l => l.code === code);
       storage.set('app_language', code);
+      i18n.changeLanguage(code);
       set({ language: code, locale: found?.locale || 'en-IN', hasChosen: true });
     },
   };

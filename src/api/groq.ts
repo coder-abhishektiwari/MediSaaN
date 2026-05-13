@@ -9,11 +9,13 @@ export async function chatWithBot(
   patientContext: {
     name: string; age: number; gender: string; city: string;
     conditions: string[]; medicines: string[]; allergies: string;
-    recent_tests: string; language: string;
-  }
+    recent_tests: string; language: string; languageName: string; nativeLanguageName: string;
+  },
+  isVoiceMode: boolean = false
 ): Promise<string> {
   const systemPrompt = `You are MediSaaN, a caring health assistant for Indian patients.
-Speak in ${patientContext.language} using very simple, warm words — like a caring family member.
+Speak ONLY in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). EVERY word and sentence MUST be in ${patientContext.nativeLanguageName}. NEVER switch languages or use English.
+Use very simple, warm words — like a caring family member.
 Keep every response to 2-3 short sentences maximum. Never be verbose.
 Always be reassuring and kind.
 For any serious health concern, always add a suggestion to see a doctor.
@@ -30,13 +32,17 @@ Patient you are talking with:
 
 If you need information not provided above, ask politely.`;
 
+  const finalSystemPrompt = isVoiceMode 
+    ? systemPrompt + `\nIMPORTANT: You are communicating via VOICE. Keep your reply extremely concise, conversational, professional, and easy to hear. Do not use markdown, emojis, or lists. Remember to ALWAYS respond in ${patientContext.nativeLanguageName}.`
+    : systemPrompt;
+
   try {
     const res = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
         model: 'llama-3.1-8b-instant',
         max_tokens: 250,
-        messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        messages: [{ role: 'system', content: finalSystemPrompt }, ...messages],
       },
       {
         headers: {

@@ -1,7 +1,23 @@
 import { Patient } from '../store/patientStore';
-import { LANGUAGE_NAMES } from '../store/languageStore';
+import { LANGUAGE_NAMES, LANGUAGES } from '../store/languageStore';
 import { getMedicines } from '../db/queries/medicines';
 import { getScanHistory } from '../db/queries/reports';
+
+// Map language codes to native language names (for AI models)
+const NATIVE_LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  hi: 'हिंदी',
+  bn: 'বাংলা',
+  mr: 'मराठी',
+  ta: 'தமிழ்',
+  te: 'తెలుగు',
+  gu: 'ગુજરાતી',
+  kn: 'ಕನ್ನಡ',
+  ml: 'മലയാളം',
+  pa: 'ਪੰਜਾਬੀ',
+  or: 'ଓଡ଼ିଆ',
+  ur: 'اردو',
+};
 
 export function buildPatientContext(patient: Patient, language: string) {
   let medicines: string[] = [];
@@ -33,6 +49,8 @@ export function buildPatientContext(patient: Patient, language: string) {
     medicines,
     recent_tests: reports.length ? reports.join('; ') : 'None saved',
     allergies:    patient.allergies || 'none',
-    language:     LANGUAGE_NAMES[language] || 'English',
+    language:     language, // language code (e.g., 'hi', 'bn', 'en')
+    languageName: LANGUAGE_NAMES[language] || 'English', // English name (e.g., 'Hindi', 'Bengali', 'English')
+    nativeLanguageName: NATIVE_LANGUAGE_NAMES[language] || 'English', // Native name (e.g., 'हिंदी', 'বাংলা', 'English')
   };
 }

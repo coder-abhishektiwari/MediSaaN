@@ -82,7 +82,8 @@ If it is not a medicine-related image, do not guess a medicine name.
 
 Patient context: ${patientContext.age} year old ${patientContext.gender}, diagnosed with: ${(patientContext.conditions || []).join(', ')}.
 Currently taking: ${(patientContext.medicines || []).join(', ')}.
-Response language: ${patientContext.language}
+
+IMPORTANT: Respond in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). ALL text fields MUST be in ${patientContext.nativeLanguageName}. NEVER use any other language.
 
 Respond ONLY in valid JSON (no markdown):
 {
@@ -90,11 +91,11 @@ Respond ONLY in valid JSON (no markdown):
   "not_medicine_message": null,
   "medicine_name": "exact medicine name",
   "generic_name": "generic/salt name",
-  "simple_description": "ONE sentence in ${patientContext.language} — what this medicine is for",
-  "uses": "uses in ${patientContext.language}",
+  "simple_description": "ONE sentence in ${patientContext.nativeLanguageName} — what this medicine is for",
+  "uses": "uses in ${patientContext.nativeLanguageName}",
   "dosage_instructions": "typical dosage",
-  "side_effects": "common side effects in simple words in ${patientContext.language}",
-  "warnings": "important warnings in ${patientContext.language}",
+  "side_effects": "common side effects in simple words in ${patientContext.nativeLanguageName}",
+  "warnings": "important warnings in ${patientContext.nativeLanguageName}",
   "how_to_take": "before_food or after_food or with_food or anytime",
   "drug_interactions": "any interactions with the patient's current medicines, or null",
   "identified_confidence": "high or medium or low",
@@ -146,21 +147,22 @@ If it is not a medical report, do not guess report values.
 
 Patient: ${patientContext.name}, ${patientContext.age} years old, ${patientContext.gender}, city: ${patientContext.city}.
 Known conditions: ${(patientContext.conditions || []).join(', ')}. Allergies: ${patientContext.allergies}.
-Response language: ${patientContext.language}
+
+IMPORTANT: Respond in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). ALL text fields MUST be in ${patientContext.nativeLanguageName}. NEVER use any other language.
 
 Respond ONLY in valid JSON:
 {
   "is_report": true,
   "not_report_message": null,
-  "simple_verdict": "ONE sentence in ${patientContext.language} — is everything normal or what needs attention",
+  "simple_verdict": "ONE sentence in ${patientContext.nativeLanguageName} — is everything normal or what needs attention",
   "severity": "normal or mild_concern or needs_attention or urgent",
   "parameters": [
-    { "name": "...", "value": "...", "unit": "...", "normal_range": "...", "status": "normal or high or low or critical", "meaning": "simple meaning in ${patientContext.language}" }
+    { "name": "...", "value": "...", "unit": "...", "normal_range": "...", "status": "normal or high or low or critical", "meaning": "simple meaning in ${patientContext.nativeLanguageName}" }
   ],
   "report_type": "blood_test or urine or xray or ecg or other",
-  "possible_conditions": "simple explanation in ${patientContext.language}",
-  "diet_advice": "diet recommendations in ${patientContext.language}",
-  "lifestyle_advice": "lifestyle changes in ${patientContext.language}",
+  "possible_conditions": "simple explanation in ${patientContext.nativeLanguageName}",
+  "diet_advice": "diet recommendations in ${patientContext.nativeLanguageName}",
+  "lifestyle_advice": "lifestyle changes in ${patientContext.nativeLanguageName}",
   "specialist_to_see": "which specialist",
   "follow_up_when": "when to retest",
   "urgent_action": "only if severity is urgent, else null"

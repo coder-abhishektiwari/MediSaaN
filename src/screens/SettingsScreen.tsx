@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Switch, SafeAreaView, StatusBar, Alert,
+  Switch, SafeAreaView, StatusBar, Alert, Linking,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useIsFocused } from '@react-navigation/native';
 import { usePatientStore } from '../store/patientStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -56,6 +57,7 @@ export default function SettingsScreen({ navigation }: any) {
   const { language, setLanguage } = useLanguageStore();
   const [showShortcutGuide, setShowShortcutGuide] = useState(false);
   const currentLang = LANGUAGES.find(l => l.code === language);
+  const { t } = useTranslation();
 
   const isFocused = useIsFocused();
   const [counts, setCounts] = useState({ active: 0, scannedMeds: 0, reports: 0 });
@@ -131,6 +133,8 @@ export default function SettingsScreen({ navigation }: any) {
           />
           <Divider />
           <Row icon="🌑" label="High Contrast" right={<Switch value={highContrast} onValueChange={setHighContrast} trackColor={{ true: colors.primary }} />} />
+          <Divider />
+          <Row icon="📱" label={t('manage_permissions', 'App Permissions')} value={t('manage_permissions_sub', 'Manage system-level permissions')} onPress={() => navigation.navigate('Permission', { fromSettings: true })} />
         </Section>
 
         <Section title="Shortcuts & Accessibility">
