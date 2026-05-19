@@ -4,8 +4,10 @@ import {
   SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Animated,
   Modal, Dimensions, Easing,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
+import { useVoiceStore } from '../store/voiceStore';
 import { chatWithBot } from '../api/groq';
 import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
@@ -15,76 +17,13 @@ import { colors, typography, spacing, borderRadius, sizes } from '../theme';
 import dayjs from 'dayjs';
 
 // ─── Language config ──────────────────────────────────────────────────────────
-const LANG_CONFIG: Record<string, {
-  welcome: (name: string) => string;
-  quickPrompts: { id: string; label: string; text: string }[];
-  voiceHint: string;
-  listeningText: string;
-  typePlaceholder: string;
-  botStatus: string;
-  tapToSpeak: string;
-  interruptLabel: string;
-  speakingLabel: string;
-}> = {
-  hi: {
-    welcome: (name) =>
-      `नमस्ते ${name}! 🙏 मैं आपका MediSaaN bot हूँ। आप मुझसे अपनी सेहत के बारे में कुछ भी पूछ सकते हैं।`,
-    quickPrompts: [
-      { id: 'forgot', label: '💊 दवा भूल गए', text: 'मैं अपनी दवा लेना भूल गया। मुझे क्या करना चाहिए?' },
-      { id: 'pain', label: '🤕 दर्द है', text: 'मुझे दर्द हो रहा है। क्या करूँ?' },
-      { id: 'side', label: '⚠️ साइड इफेक्ट', text: 'मेरी दवाओं के साइड इफेक्ट बताएं।' },
-      { id: 'doctor', label: '👨‍⚕️ डॉक्टर कब?', text: 'मेरी स्थिति में डॉक्टर कब दिखाना चाहिए?' },
-      { id: 'diet', label: '🥗 खान-पान', text: 'मेरी बीमारी में क्या खाना चाहिए?' },
-    ],
-    voiceHint: 'बोलने के लिए दबाएं',
-    listeningText: 'सुन रहा हूँ...',
-    typePlaceholder: 'टाइप करें या बोलें...',
-    botStatus: '🟢 मदद के लिए तैयार',
-    tapToSpeak: 'बात करने के लिए टैप करें',
-    interruptLabel: 'रोकें',
-    speakingLabel: 'बोल रहा हूँ...',
-  },
-  en: {
-    welcome: (name) =>
-      `Hello ${name}! 🙏 I am your MediSaaN bot. You can ask me anything about your health and I will help you!`,
-    quickPrompts: [
-      { id: 'forgot', label: '💊 Forgot medicine', text: 'I forgot to take my medicine. What should I do?' },
-      { id: 'pain', label: '🤕 I have pain', text: 'I am having pain. What should I do?' },
-      { id: 'side', label: '⚠️ Side effects?', text: 'Tell me about the side effects of my medicines.' },
-      { id: 'doctor', label: '👨‍⚕️ When to see doctor?', text: 'When should I see a doctor based on my condition?' },
-      { id: 'diet', label: '🥗 Diet advice', text: 'What diet should I follow for my health conditions?' },
-    ],
-    voiceHint: 'Press to speak',
-    listeningText: 'Listening...',
-    typePlaceholder: 'Type or speak your question...',
-    botStatus: '🟢 Ready to help',
-    tapToSpeak: 'Tap to talk',
-    interruptLabel: 'Interrupt',
-    speakingLabel: 'Speaking...',
-  },
-  pa: {
-    welcome: (name) =>
-      `ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ ${name}! 🙏 ਮੈਂ ਤੁਹਾਡਾ MediSaaN bot ਹਾਂ। ਆਪਣੀ ਸਿਹਤ ਬਾਰੇ ਕੁਝ ਵੀ ਪੁੱਛੋ।`,
-    quickPrompts: [
-      { id: 'forgot', label: '💊 ਦਵਾਈ ਭੁੱਲੀ', text: 'ਮੈਂ ਦਵਾਈ ਲੈਣਾ ਭੁੱਲ ਗਿਆ। ਕੀ ਕਰਾਂ?' },
-      { id: 'pain', label: '🤕 ਦਰਦ ਹੈ', text: 'ਮੈਨੂੰ ਦਰਦ ਹੋ ਰਿਹਾ ਹੈ। ਕੀ ਕਰਾਂ?' },
-      { id: 'side', label: '⚠️ ਸਾਈਡ ਇਫੈਕਟ', text: 'ਮੇਰੀਆਂ ਦਵਾਈਆਂ ਦੇ ਸਾਈਡ ਇਫੈਕਟ ਦੱਸੋ।' },
-      { id: 'doctor', label: '👨‍⚕️ ਡਾਕਟਰ ਕਦੋਂ?', text: 'ਮੈਨੂੰ ਡਾਕਟਰ ਕਦੋਂ ਮਿਲਣਾ ਚਾਹੀਦਾ?' },
-      { id: 'diet', label: '🥗 ਖੁਰਾਕ ਸਲਾਹ', text: 'ਮੈਨੂੰ ਕੀ ਖਾਣਾ ਚਾਹੀਦਾ?' },
-    ],
-    voiceHint: 'ਬੋਲਣ ਲਈ ਦਬਾਓ',
-    listeningText: 'ਸੁਣ ਰਿਹਾ ਹਾਂ...',
-    typePlaceholder: 'ਟਾਈਪ ਕਰੋ ਜਾਂ ਬੋਲੋ...',
-    botStatus: '🟢 ਮਦਦ ਲਈ ਤਿਆਰ',
-    tapToSpeak: 'ਗੱਲ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ',
-    interruptLabel: 'ਰੋਕੋ',
-    speakingLabel: 'ਬੋਲ ਰਿਹਾ ਹਾਂ...',
-  },
-};
-
-function getLangConfig(language: string) {
-  return LANG_CONFIG[language] ?? LANG_CONFIG['en'];
-}
+const QUICK_PROMPTS = [
+  { id: 'forgot', labelKey: 'chat_quick_prompt_forgot_label', textKey: 'chat_quick_prompt_forgot_text' },
+  { id: 'pain', labelKey: 'chat_quick_prompt_pain_label', textKey: 'chat_quick_prompt_pain_text' },
+  { id: 'side', labelKey: 'chat_quick_prompt_side_label', textKey: 'chat_quick_prompt_side_text' },
+  { id: 'doctor', labelKey: 'chat_quick_prompt_doctor_label', textKey: 'chat_quick_prompt_doctor_text' },
+  { id: 'diet', labelKey: 'chat_quick_prompt_diet_label', textKey: 'chat_quick_prompt_diet_text' },
+];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; time: string };
@@ -266,7 +205,14 @@ interface VoiceModalProps {
 }
 
 function VoiceModal({ visible, onClose, onSend, language, locale, patientName }: VoiceModalProps) {
-  const lc = getLangConfig(language);
+  const { t } = useTranslation();
+  const lc = {
+    voiceHint: t('chat_voice_hint'),
+    listeningText: t('chat_listening'),
+    tapToSpeak: t('chat_tap_to_speak'),
+    interruptLabel: t('chat_interrupt_label'),
+    speakingLabel: t('chat_speaking_label'),
+  };
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [transcript, setTranscript] = useState('');
   const isSpeaking = useRef(false);
@@ -532,20 +478,42 @@ const vm = StyleSheet.create({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ChatScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { patient } = usePatientStore();
   const { language, locale } = useLanguageStore();
-  const lc = getLangConfig(language);
+  const { isVoiceModeActive, setVoiceModeActive } = useVoiceStore();
+
+  const lc = {
+    welcome: () => t('chat_welcome', { name: patient.name || t('chat_default_user') }),
+    quickPrompts: QUICK_PROMPTS.map(prompt => ({
+      id: prompt.id,
+      label: t(prompt.labelKey),
+      text: t(prompt.textKey),
+    })),
+    voiceHint: t('chat_voice_hint'),
+    listeningText: t('chat_listening'),
+    typePlaceholder: t('chat_type_placeholder'),
+    botStatus: t('chat_bot_status'),
+    tapToSpeak: t('chat_tap_to_speak'),
+    interruptLabel: t('chat_interrupt_label'),
+    speakingLabel: t('chat_speaking_label'),
+  };
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [sessionId, setSessionId] = useState<number | null>(null);
-  const [voiceModalVisible, setVoiceModalVisible] = useState(false);
+  const [voiceModalVisible, setVoiceModalVisible] = useState(isVoiceModeActive);
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
+    setVoiceModalVisible(isVoiceModeActive);
+  }, [isVoiceModeActive]);
+
+  useEffect(() => {
     if (!patient?.id) return;
+
     let sid = getLastSession(patient.id);
     if (!sid) sid = createSession(patient.id);
     setSessionId(sid);
@@ -556,7 +524,7 @@ export default function ChatScreen({ navigation }: any) {
     if (stored.length === 0) {
       const welcome: ChatMessage = {
         id: 'welcome', role: 'assistant',
-        content: lc.welcome(patient.name),
+        content: lc.welcome(patient.name || 'User'),
         time: dayjs().format('hh:mm A'),
       };
       setMessages([welcome]);
@@ -597,7 +565,7 @@ export default function ChatScreen({ navigation }: any) {
     } catch {
       const errMsg: ChatMessage = {
         id: (Date.now() + 1).toString(), role: 'assistant',
-        content: 'Sorry, I could not respond. Please check your internet connection.',
+        content: t('error_generic'),
         time: dayjs().format('hh:mm A'),
       };
       setMessages(prev => [...prev, errMsg]);
@@ -646,7 +614,10 @@ export default function ChatScreen({ navigation }: any) {
         {/* Voice mode button in header */}
         <TouchableOpacity
           style={styles.voiceModeBtn}
-          onPress={() => setVoiceModalVisible(true)}
+          onPress={() => {
+            setVoiceModalVisible(true);
+            setVoiceModeActive(true);
+          }}
         >
           <Text style={styles.voiceModeBtnText}>🎙 Voice</Text>
         </TouchableOpacity>
@@ -726,6 +697,7 @@ export default function ChatScreen({ navigation }: any) {
         visible={voiceModalVisible}
         onClose={() => {
           setVoiceModalVisible(false);
+          setVoiceModeActive(false);
           TTSService.stop();
         }}
         onSend={async (text) => {

@@ -32,7 +32,7 @@ export default function SplashScreen({ navigation }: any) {
 
     const checkAndNavigate = async () => {
       // Small delay for branding visibility
-      await new Promise(r => setTimeout(r, 2400));
+      await new Promise(resolve => setTimeout(resolve, 2400));
       
       const perms = await PermissionService.checkAll();
       if (!perms.camera || !perms.notifications) {

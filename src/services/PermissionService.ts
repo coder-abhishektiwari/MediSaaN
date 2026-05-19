@@ -36,7 +36,7 @@ export class PermissionService {
     // 4. Battery Optimization
     try {
       const power = await notifee.getPowerManagerInfo();
-      results.battery = !power?.batteryOptimizationEnabled;
+      results.battery = !(power as any)?.batteryOptimizationEnabled;
     } catch (e) {
       results.battery = true; // Fallback to safe
     }
@@ -86,11 +86,7 @@ export class PermissionService {
   static async requestAlarm() {
     if (Platform.OS === 'android') {
       try {
-        if (typeof notifee.openAlarmSettings === 'function') {
-          await notifee.openAlarmSettings();
-        } else {
-          Linking.openSettings();
-        }
+        Linking.openSettings();
       } catch (e) {
         Linking.openSettings();
       }

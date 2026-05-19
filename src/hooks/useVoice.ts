@@ -19,11 +19,10 @@ export function useVoice() {
   const startListening = () => {
     setIsListening(true);
     setTranscript('');
-    STTService.start(
-      language === 'en' ? 'en-IN' : `${language}-IN`,
-      (text) => setTranscript(text),
-      (e) => setIsListening(false)
-    );
+    STTService.onSpeechResults = (e) => setTranscript(e.value[0]);
+    STTService.onSpeechError = (e) => setIsListening(false);
+    STTService.onSpeechEnd = () => setIsListening(false);
+    STTService.start(language === 'en' ? 'en-IN' : `${language}-IN`);
   };
 
   const stopListening = () => {

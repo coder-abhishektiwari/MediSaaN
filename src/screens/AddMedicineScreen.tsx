@@ -171,7 +171,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>Dose Times</Text>
             <View style={styles.timesRow}>
-              {doseTimes.map((t, i) => (
+              {doseTimes.map((t: string, i: number) => (
                 <TextInput key={i} style={styles.timeInput} value={t}
                   onChangeText={v => updateTime(i, v)} placeholder="HH:MM"
                   placeholderTextColor={colors.textMuted} keyboardType="numbers-and-punctuation" />

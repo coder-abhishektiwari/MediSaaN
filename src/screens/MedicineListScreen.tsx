@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, SafeAreaView, Alert, Image, Dimensions } from 'react-native';
 import { usePatientStore } from '../store/patientStore';
-import { getMedicines, deleteMedicine } from '../db/queries/medicines';
+import { getMedicines, deleteMedicine, stopMedicine } from '../db/queries/medicines';
 import { db } from '../db/schema';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
 import { useReminders } from '../hooks/useReminders';
@@ -20,7 +20,7 @@ const getMedIcon = (unit: string) => {
   return '💊';
 };
 
-function MedicineCard({ med, allLogs, navigation, onDelete }: any) {
+function MedicineCard({ med, allLogs, navigation, onDelete, onStop }: any) {
   const times: string[] = JSON.parse(med.dose_times || '[]').sort();
   
   const medStats = useMemo(() => {
@@ -93,6 +93,9 @@ function MedicineCard({ med, allLogs, navigation, onDelete }: any) {
         <TouchableOpacity style={card.editBtn} onPress={() => navigation.navigate('AddMedicine', { editMedicine: med })}>
           <Text style={card.editIcon}>✏️</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={card.stopBtn} onPress={() => onStop(med)}>
+          <Text style={card.stopIcon}>⏹️</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={card.deleteBtn} onPress={() => onDelete(med)}>
           <Text style={card.deleteIcon}>🗑</Text>
         </TouchableOpacity>
@@ -119,6 +122,8 @@ const card = StyleSheet.create({
   actionColumn: { justifyContent: 'space-between', alignItems: 'center', paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.border + '40', marginLeft: 8 },
   editBtn: { padding: 6 },
   editIcon: { fontSize: 18 },
+  stopBtn: { padding: 6 },
+  stopIcon: { fontSize: 16, color: colors.warning + '80' },
   deleteBtn: { padding: 6 },
   deleteIcon: { fontSize: 16, color: colors.danger + '80' },
   
@@ -161,8 +166,19 @@ export default function MedicineListScreen({ navigation }: any) {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  const handleStop = (med: any) => {
+    Alert.alert('Stop Medicine', `Stop taking ${med.name}? This will end the medicine schedule.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Stop', style: 'destructive', onPress: () => {
+        stopMedicine(med.id, 'Stopped by user');
+        cancelAll(med.id);
+        load();
+      }},
+    ]);
+  };
+
   const handleDelete = (med: any) => {
-    Alert.alert('Delete Medicine', `Remove ${med.name}?`, [
+    Alert.alert('Delete Medicine', `Permanently delete ${med.name}? This action cannot be undone.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => {
         deleteMedicine(med.id);
@@ -182,7 +198,7 @@ export default function MedicineListScreen({ navigation }: any) {
       <FlatList
         data={medicines}
         keyExtractor={item => String(item.id)}
-        renderItem={({ item }) => <MedicineCard med={item} allLogs={allLogs} navigation={navigation} onDelete={handleDelete} />}
+        renderItem={({ item }) => <MedicineCard med={item} allLogs={allLogs} navigation={navigation} onDelete={handleDelete} onStop={handleStop} />}
         contentContainerStyle={styles.list}
         ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyEmoji}>💊</Text><Text style={styles.emptyTitle}>No Medicines Added</Text><Text style={styles.emptySub}>Add your first medicine tapping the button below.</Text></View>}
       />

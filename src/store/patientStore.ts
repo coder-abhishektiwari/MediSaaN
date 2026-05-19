@@ -36,7 +36,7 @@ export const usePatientStore = create<PatientStore>((set) => {
       set({ patient: p, isProfileComplete: true });
     },
     clearPatient: () => {
-      storage.remove('patient_profile');
+      storage.delete('patient_profile');
       set({ patient: null, isProfileComplete: false });
     },
   };

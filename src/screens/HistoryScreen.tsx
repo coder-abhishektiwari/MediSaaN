@@ -4,7 +4,7 @@ import {
   Image, SafeAreaView, StatusBar, ActivityIndicator, Modal
 } from 'react-native';
 import { usePatientStore } from '../store/patientStore';
-import { getScanHistory, deleteScan } from '../db/queries/reports';
+import { getScanHistory } from '../db/queries/reports';
 import { getMedicines } from '../db/queries/medicines';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import { useFocusEffect } from '@react-navigation/native';

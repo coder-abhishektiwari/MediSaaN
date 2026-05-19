@@ -4,12 +4,12 @@ import {
   StatusBar, Alert, ScrollView, Modal, Animated, Easing,
 } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { Camera, useCameraDevice, useCameraPermission, type CameraRef } from 'react-native-vision-camera';
+import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { scanMedicine } from '../api/gemini';
-import { saveScanResult, getScanHistory, deleteScan } from '../db/queries/reports';
+import { saveScanResult, getScanHistory, deleteScanResult } from '../db/queries/reports';
 import { addMedicine, getMedicines } from '../db/queries/medicines';
 import { compressAndEncode, savePermanentImage } from '../utils/imageUtils';
 import { buildPatientContext } from '../utils/promptBuilder';

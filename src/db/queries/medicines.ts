@@ -25,8 +25,17 @@ export function deleteMedicine(id: number) {
   db.execute('UPDATE medicines SET is_active = 0 WHERE id = ?', [id]);
 }
 
-export function deleteMedicineByName(patientId: number, name: string) {
-  db.execute('UPDATE medicines SET is_active = 0 WHERE patient_id = ? AND name = ?', [patientId, name]);
+export function deleteMedicineByName(patientId: number, medicineName: string) {
+  db.execute('UPDATE medicines SET is_active = 0 WHERE patient_id = ? AND name = ?', [patientId, medicineName]);
+}
+
+export function stopMedicine(id: number, reason?: string) {
+  const now = new Date().toISOString();
+  db.execute('UPDATE medicines SET is_active = 0, end_date = ?, notes = COALESCE(notes || "\n", "") || ? WHERE id = ?', [now, reason ? `STOPPED: ${reason}` : 'STOPPED by user', id]);
+}
+
+export function updateMedicineTiming(id: number, doseTimes: string[]) {
+  db.execute('UPDATE medicines SET dose_times = ? WHERE id = ?', [JSON.stringify(doseTimes), id]);
 }
 
 export function logReminderAction(medicineId: number, scheduledTime: string, action: string) {

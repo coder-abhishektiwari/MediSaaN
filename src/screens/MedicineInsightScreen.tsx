@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, Dimensions, Alert } from 'react-native';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import dayjs from 'dayjs';
+import { stopMedicine } from '../db/queries/medicines';
 import { db } from '../db/schema';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -16,6 +17,16 @@ export default function MedicineInsightScreen({ route, navigation }: any) {
   const weekStart = dayjs().startOf('week').add(currentWeekOffset, 'week');
   const weekDates = Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'));
   const monthLabel = weekStart.format('MMMM YYYY');
+
+  const handleStop = () => {
+    Alert.alert('Stop Medicine', `Stop taking ${med.name}? This will end the medicine schedule.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Stop', style: 'destructive', onPress: () => {
+        stopMedicine(med.id, 'Stopped by user');
+        navigation.goBack();
+      }},
+    ]);
+  };
 
   React.useEffect(() => {
     const start = weekStart.toISOString();
@@ -124,7 +135,7 @@ export default function MedicineInsightScreen({ route, navigation }: any) {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><Text style={styles.backText}>← Back</Text></TouchableOpacity>
         <Text style={styles.headerTitle}>Medicine Insights</Text>
-        <View style={{ width: 60 }} />
+        <TouchableOpacity onPress={handleStop} style={styles.stopBtn}><Text style={styles.stopText}>⏹️ Stop</Text></TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -192,6 +203,8 @@ const styles = StyleSheet.create({
   backBtn: { padding: 4 },
   backText: { fontSize: 16, color: colors.primary, fontWeight: '600' },
   headerTitle: { ...typography.headingMedium, color: colors.textPrimary },
+  stopBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.warning + '20', borderWidth: 1, borderColor: colors.warning + '40' },
+  stopText: { fontSize: 12, color: colors.warning, fontWeight: '700' },
   scroll: { padding: spacing.lg, gap: spacing.lg },
   medCard: { backgroundColor: colors.surface, padding: spacing.xl, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.border, elevation: 2 },
   medName: { fontSize: 24, fontWeight: '800', color: colors.textPrimary },

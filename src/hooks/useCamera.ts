@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
-import { type CameraRef } from 'react-native-vision-camera';
+import { Camera } from 'react-native-vision-camera';
 import { compressAndEncode } from '../utils/imageUtils';
 
 export function useCamera() {
-  const cameraRef = useRef<CameraRef>(null);
+  const cameraRef = useRef<Camera>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
   const captureAndEncode = async (): Promise<string | null> => {

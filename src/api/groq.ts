@@ -1,5 +1,16 @@
 import axios from 'axios';
 import { GROQ_API_KEY } from '@env';
+import { executeAction } from '../utils/actionExecutor';
+import { navigationRef } from '../navigation/navigationRef';
+import { stopMedicine, updateMedicineTiming } from '../db/queries/medicines';
+import { deleteScanResult, getScanHistory } from '../db/queries/reports';
+import { getMedicines } from '../db/queries/medicines';
+import { getScanHistory as getReports } from '../db/queries/reports';
+import { buildPatientContext } from '../utils/promptBuilder';
+import { usePatientStore } from '../store/patientStore';
+import { useLanguageStore } from '../store/languageStore';
+
+interface Message { role: 'user' | 'assistant' | 'system'; content: string; }
 
 
 interface Message { role: 'user' | 'assistant' | 'system'; content: string; }
@@ -15,11 +26,24 @@ export async function chatWithBot(
 ): Promise<string> {
   const systemPrompt = `You are MediSaaN, a caring health assistant for Indian patients.
 Speak ONLY in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). EVERY word and sentence MUST be in ${patientContext.nativeLanguageName}. NEVER switch languages or use English.
+Use the native script for this language only. Do not use Latin letters, transliteration, or Romanized words.
 Use very simple, warm words — like a caring family member.
 Keep every response to 2-3 short sentences maximum. Never be verbose.
 Always be reassuring and kind.
 For any serious health concern, always add a suggestion to see a doctor.
 Never give a definitive medical diagnosis.
+
+IMPORTANT: You can perform actions in the app. If the user asks to do something specific, respond with a JSON action instead of normal text. Use this format:
+{"action": "action_name", "params": {"key": "value"}}
+
+Available actions:
+- stop_medicine: {"medicineName": "name", "reason": "optional"}
+- delete_medicine: {"medicineName": "name"}
+- update_medicine_timing: {"medicineName": "name", "newTimes": ["09:00", "15:00"]}
+- delete_report: {"reportId": number}
+- navigate_to_screen: {"screenName": "medicine_scan|report_scan|chat|medicines|home|settings"}
+- get_medicine_insights: {}
+- get_health_analysis: {}
 
 Patient you are talking with:
 - Name: ${patientContext.name}
@@ -33,7 +57,7 @@ Patient you are talking with:
 If you need information not provided above, ask politely.`;
 
   const finalSystemPrompt = isVoiceMode 
-    ? systemPrompt + `\nIMPORTANT: You are communicating via VOICE. Keep your reply extremely concise, conversational, professional, and easy to hear. Do not use markdown, emojis, or lists. Remember to ALWAYS respond in ${patientContext.nativeLanguageName}.`
+    ? systemPrompt + `\nIMPORTANT: You are communicating via VOICE. Keep your reply extremely concise, conversational, professional, and easy to hear. Do not use markdown, emojis, or lists. Remember to ALWAYS respond in ${patientContext.nativeLanguageName} using the native script only.`
     : systemPrompt;
 
   try {
@@ -52,9 +76,22 @@ If you need information not provided above, ask politely.`;
         timeout: 20000,
       }
     );
-    return res.data?.choices?.[0]?.message?.content || 'I am sorry, I could not understand that. Can you repeat?';
-  } catch (error: any) {
-    console.error('Groq API Error:', error?.response?.data || error.message);
+    let response = res.data?.choices?.[0]?.message?.content || 'I am sorry, I could not understand that. Can you repeat?';
+    
+    // Check if response is a JSON action
+    try {
+      const parsed = JSON.parse(response);
+      if (parsed.action && parsed.params) {
+        const actionResult = await executeAction(parsed.action, parsed.params, patientContext);
+        return actionResult;
+      }
+    } catch (e) {
+      // Not a JSON action, return normal response
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Groq API Error:', error);
     throw error;
   }
 }

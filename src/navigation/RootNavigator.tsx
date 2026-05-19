@@ -25,6 +25,7 @@ import HistoryDetailScreen from '../screens/HistoryDetailScreen';
 import MedicineInsightScreen from '../screens/MedicineInsightScreen';
 import AlarmScreen from '../screens/AlarmScreen';
 import PermissionScreen from '../screens/PermissionScreen';
+import FloatingVoiceButton from '../components/FloatingVoiceButton';
 import { PermissionService } from '../services/PermissionService';
 
 const Stack = createNativeStackNavigator();
@@ -65,7 +66,7 @@ export default function RootNavigator() {
       if (notification?.notification.data?.type === 'alarm') {
         const data = notification.notification.data;
         setTimeout(() => {
-          navigationRef.navigate('Alarm', {
+          (navigationRef as any).navigate('Alarm', {
             medicine: JSON.parse(data.medicine as string),
             scheduledTime: data.scheduledTime,
             notificationId: notification.notification.id
@@ -78,7 +79,7 @@ export default function RootNavigator() {
     return notifee.onForegroundEvent(({ type, detail }) => {
       if (type === EventType.PRESS && detail.notification?.data?.type === 'alarm') {
         const data = detail.notification.data;
-        navigationRef.navigate('Alarm', {
+        (navigationRef as any).navigate('Alarm', {
           medicine: JSON.parse(data.medicine as string),
           scheduledTime: data.scheduledTime,
           notificationId: detail.notification.id
@@ -115,6 +116,7 @@ export default function RootNavigator() {
         <Stack.Screen name="MedicineInsight" component={MedicineInsightScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Alarm"           component={AlarmScreen}           options={{ animation: 'slide_from_bottom' }} />
       </Stack.Navigator>
+      <FloatingVoiceButton />
     </NavigationContainer>
   );
 }

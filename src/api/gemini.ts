@@ -83,7 +83,7 @@ If it is not a medicine-related image, do not guess a medicine name.
 Patient context: ${patientContext.age} year old ${patientContext.gender}, diagnosed with: ${(patientContext.conditions || []).join(', ')}.
 Currently taking: ${(patientContext.medicines || []).join(', ')}.
 
-IMPORTANT: Respond in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). ALL text fields MUST be in ${patientContext.nativeLanguageName}. NEVER use any other language.
+IMPORTANT: Respond in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). ALL text fields MUST be in ${patientContext.nativeLanguageName}. NEVER use any other language. Use the native script only; do not use Latin letters, transliteration, or English.
 
 Respond ONLY in valid JSON (no markdown):
 {
@@ -148,7 +148,7 @@ If it is not a medical report, do not guess report values.
 Patient: ${patientContext.name}, ${patientContext.age} years old, ${patientContext.gender}, city: ${patientContext.city}.
 Known conditions: ${(patientContext.conditions || []).join(', ')}. Allergies: ${patientContext.allergies}.
 
-IMPORTANT: Respond in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). ALL text fields MUST be in ${patientContext.nativeLanguageName}. NEVER use any other language.
+IMPORTANT: Respond in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). ALL text fields MUST be in ${patientContext.nativeLanguageName}. NEVER use any other language. Use the native script only; do not use Latin letters, transliteration, or English.
 
 Respond ONLY in valid JSON:
 {

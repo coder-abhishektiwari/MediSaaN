@@ -16,6 +16,6 @@ export function getScanHistory(patientId: number) {
   return db.execute('SELECT * FROM scan_results WHERE patient_id = ? ORDER BY created_at DESC', [patientId]).rows?._array || [];
 }
 
-export function deleteScan(id: number) {
+export function deleteScanResult(id: number) {
   db.execute('DELETE FROM scan_results WHERE id = ?', [id]);
 }

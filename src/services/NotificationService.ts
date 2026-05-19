@@ -22,13 +22,12 @@ export class NotificationService {
       importance: AndroidImportance.HIGH,
       visibility: AndroidVisibility.PUBLIC,
       vibration: true,
-      fullScreenAction: true,
     });
   }
 
   static async isBatteryOptimizationEnabled(): Promise<boolean> {
     const settings = await notifee.getPowerManagerInfo();
-    return settings.batteryOptimizationEnabled || false;
+    return (settings as any).batteryOptimizationEnabled || false;
   }
 
   static async openBatteryOptimizationSettings() {
@@ -53,7 +52,6 @@ export class NotificationService {
         android: {
           channelId: 'medisaan_alarms',
           importance: AndroidImportance.HIGH,
-          priority: 'high',
           category: AndroidCategory.ALARM,
           ongoing: true,
           autoCancel: false,
@@ -108,7 +106,6 @@ export class NotificationService {
           android: {
             channelId: 'medisaan_alarms',
             importance: AndroidImportance.HIGH,
-            priority: 'high',
             category: AndroidCategory.ALARM,
             ongoing: true,
             autoCancel: false,

@@ -4,7 +4,7 @@ import {
   StatusBar, Alert, ScrollView, Modal, Animated, Easing,
 } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { Camera, useCameraDevice, useCameraPermission, type CameraRef } from 'react-native-vision-camera';
+import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useTranslation } from 'react-i18next';
 import { usePatientStore } from '../store/patientStore';
@@ -350,7 +350,7 @@ export default function ReportScanScreen({ navigation }: any) {
 
       setProcessingStage('processing');
       setScanStatus(t('reading_report'));
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       setResult(data);
       setFrameState('candidate');
@@ -537,7 +537,7 @@ export default function ReportScanScreen({ navigation }: any) {
                     <Text style={[styles.thCell, { flex: 1.5 }]}>Your Value</Text>
                     <Text style={[styles.thCell, { flex: 1 }]}>Status</Text>
                   </View>
-                  {result.parameters.map((p: any, i: number) => <ParameterRow key={i} param={p} />)}
+                  {result.parameters.map((p: any, i: number) => <ParameterRow key={i} param={p} t={t} />)}
                 </View>
               )}
               <View style={styles.infoSections}>
