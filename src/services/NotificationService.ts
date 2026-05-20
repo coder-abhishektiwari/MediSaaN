@@ -37,39 +37,59 @@ export class NotificationService {
   static async scheduleOneTimeAlarm(medicine: any, scheduledTime: string, delayMinutes: number) {
     const triggerDate = dayjs().add(delayMinutes, 'minute');
     const notifId = `snooze_${medicine.id}_${Date.now()}`;
+    const title = `⏰ SNOOZE: ${medicine.name}`;
+    const body = `Follow-up reminder for your dose`;
 
-    await notifee.createTriggerNotification(
-      {
-        id: notifId,
-        title: `⏰ SNOOZE: ${medicine.name}`,
-        body: `Follow-up reminder for your dose`,
-        data: {
-          medicine: JSON.stringify(medicine),
-          scheduledTime: scheduledTime,
-          type: 'alarm',
-          isSnooze: 'true'
-        },
-        android: {
-          channelId: 'medisaan_alarms',
-          importance: AndroidImportance.HIGH,
-          category: AndroidCategory.ALARM,
-          ongoing: true,
-          autoCancel: false,
-          color: '#3B82F6',
-          visibility: AndroidVisibility.PUBLIC,
-          fullScreenAction: {
-            id: 'default',
-            mainComponent: 'MediSaaN',
+    const { MediSaaNNativeModule } = require('react-native').NativeModules;
+    if (MediSaaNNativeModule && MediSaaNNativeModule.scheduleAlarm) {
+      try {
+        await MediSaaNNativeModule.scheduleAlarm(
+          notifId,
+          triggerDate.valueOf(),
+          title,
+          body,
+          JSON.stringify(medicine),
+          scheduledTime
+        );
+      } catch (err: any) {
+        console.warn('Native scheduleAlarm failed for snooze, trying older 4-argument signature:', err);
+        try {
+          await MediSaaNNativeModule.scheduleAlarm(notifId, triggerDate.valueOf(), title, body);
+        } catch (fallbackErr) {
+          console.error('All native scheduleAlarm attempts failed for snooze:', fallbackErr);
+        }
+      }
+    } else {
+      await notifee.createTriggerNotification(
+        {
+          id: notifId,
+          title, body,
+          data: {
+            medicine: JSON.stringify(medicine),
+            scheduledTime: scheduledTime,
+            type: 'alarm',
+            isSnooze: 'true'
           },
-          pressAction: { id: 'default' },
+          android: {
+            channelId: 'medisaan_alarms',
+            importance: AndroidImportance.HIGH,
+            category: AndroidCategory.ALARM,
+            ongoing: true,
+            autoCancel: false,
+            color: '#3B82F6',
+            visibility: AndroidVisibility.PUBLIC,
+            fullScreenAction: { id: 'default', mainComponent: 'MediSaaN' },
+            pressAction: { id: 'default' },
+            vibrationPattern: [300, 500, 300, 500],
+          },
         },
-      },
-      {
-        type: TriggerType.TIMESTAMP,
-        timestamp: triggerDate.valueOf(),
-        alarmManager: { allowWhileIdle: true },
-      },
-    );
+        {
+          type: TriggerType.TIMESTAMP,
+          timestamp: triggerDate.valueOf(),
+          alarmManager: { allowWhileIdle: true },
+        },
+      );
+    }
   }
 
   static async scheduleMedicineReminder(
@@ -91,7 +111,24 @@ export class NotificationService {
     
     if (MediSaaNNativeModule) {
       // Use native AlarmManager for 100% reliable wake-ups
-      await MediSaaNNativeModule.scheduleAlarm(notifId, triggerDate.valueOf(), title, body);
+      try {
+        await MediSaaNNativeModule.scheduleAlarm(
+          notifId,
+          triggerDate.valueOf(),
+          title,
+          body,
+          JSON.stringify(medicine),
+          timeStr
+        );
+      } catch (err: any) {
+        console.warn('Native scheduleAlarm failed, trying older 4-argument signature:', err);
+        try {
+          await MediSaaNNativeModule.scheduleAlarm(notifId, triggerDate.valueOf(), title, body);
+        } catch (fallbackErr) {
+          console.error('All native scheduleAlarm attempts failed:', fallbackErr);
+          throw fallbackErr;
+        }
+      }
     } else {
       // Fallback to notifee if module is missing
       await notifee.createTriggerNotification(

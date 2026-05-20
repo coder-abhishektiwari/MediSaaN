@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, Text, StyleSheet, Image, TouchableOpacity, 
-  SafeAreaView, StatusBar, Animated, Dimensions, Vibration, Platform, Alert
+  SafeAreaView, StatusBar, Animated, Dimensions, Vibration, Platform, Alert, NativeModules
 } from 'react-native';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import { logReminderAction } from '../db/queries/medicines';
@@ -19,6 +19,56 @@ export default function AlarmScreen({ route, navigation }: any) {
   const [currentTime, setCurrentTime] = useState(dayjs().format('hh:mm:ss A'));
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const { t } = useTranslation();
+  const [delayText, setDelayText] = useState('');
+
+  useEffect(() => {
+    if (scheduledTime) {
+      const calculateDelay = () => {
+        const now = dayjs();
+        const [h, m] = scheduledTime.split(':').map(Number);
+        let scheduled = dayjs().hour(h).minute(m).second(0).millisecond(0);
+        
+        // Correctly calculate delay across midnight
+        if (scheduled.isAfter(now)) {
+          scheduled = scheduled.subtract(1, 'day');
+        }
+        
+        const diffMinutes = now.diff(scheduled, 'minute');
+
+        // Auto-miss after 3 hours (180 minutes)
+        if (diffMinutes >= 180) {
+          Vibration.cancel();
+          TTSService.stop();
+          if (notificationId) {
+            notifee.cancelNotification(notificationId);
+          }
+          logReminderAction(medicine?.id, scheduledTime, 'skipped');
+          Alert.alert(t('window_closed_title'), t('window_closed_msg'), [
+            { text: t('done'), onPress: () => navigation.replace('Main') }
+          ]);
+          return;
+        }
+
+        if (diffMinutes > 0) {
+          const hours = Math.floor(diffMinutes / 60);
+          const mins = diffMinutes % 60;
+          let text = '';
+          if (hours > 0) {
+            text = `${hours}h ${mins}m late`;
+          } else {
+            text = `${mins}m late`;
+          }
+          setDelayText(text);
+        } else {
+          setDelayText('');
+        }
+      };
+
+      calculateDelay();
+      const delayInterval = setInterval(calculateDelay, 10000); // update every 10s for faster auto-miss checks
+      return () => clearInterval(delayInterval);
+    }
+  }, [scheduledTime, medicine]);
 
   useEffect(() => {
     // 1. Clock update
@@ -49,6 +99,16 @@ export default function AlarmScreen({ route, navigation }: any) {
     const startEffects = async () => {
       await checkBattery();
       await VolumeManager.setVolume(1.0, { type: 'music', showUI: false });
+      
+      // Play native alarm ringtone
+      if (NativeModules.MediSaaNNativeModule && NativeModules.MediSaaNNativeModule.startAlarmSound) {
+        try {
+          await NativeModules.MediSaaNNativeModule.startAlarmSound();
+        } catch (e) {
+          console.warn('Failed to play native alarm sound:', e);
+        }
+      }
+
       Vibration.vibrate([1000, 1000, 1000, 1000], true);
       
       const speakMsg = t('emergency_speak', { name: medicine?.name });
@@ -71,6 +131,9 @@ export default function AlarmScreen({ route, navigation }: any) {
       clearInterval(ttsTimer);
       Vibration.cancel();
       TTSService.stop();
+      if (NativeModules.MediSaaNNativeModule && NativeModules.MediSaaNNativeModule.stopAlarmSound) {
+        NativeModules.MediSaaNNativeModule.stopAlarmSound().catch(() => {});
+      }
       pulseAnim.stopAnimation();
     };
   }, [medicine]);
@@ -78,6 +141,16 @@ export default function AlarmScreen({ route, navigation }: any) {
   const stopAlarm = async () => {
     Vibration.cancel();
     TTSService.stop();
+    
+    // Stop native alarm ringtone
+    if (NativeModules.MediSaaNNativeModule && NativeModules.MediSaaNNativeModule.stopAlarmSound) {
+      try {
+        await NativeModules.MediSaaNNativeModule.stopAlarmSound();
+      } catch (e) {
+        console.warn('Failed to stop native alarm sound:', e);
+      }
+    }
+
     if (notificationId) {
       await notifee.cancelNotification(notificationId);
     }
@@ -94,7 +167,12 @@ export default function AlarmScreen({ route, navigation }: any) {
     
     const now = dayjs();
     const [h, m] = scheduledTime.split(':').map(Number);
-    const scheduled = dayjs().hour(h).minute(m).second(0);
+    let scheduled = dayjs().hour(h).minute(m).second(0).millisecond(0);
+    
+    // Correctly calculate midnight boundary
+    if (scheduled.isAfter(now)) {
+      scheduled = scheduled.subtract(1, 'day');
+    }
     const windowEnd = scheduled.add(3, 'hour');
 
     if (now.add(30, 'minute').isBefore(windowEnd)) {
@@ -131,6 +209,12 @@ export default function AlarmScreen({ route, navigation }: any) {
         <Text style={styles.medName}>{medicine?.name || t('medicine_name')}</Text>
         <Text style={styles.medDose}>{medicine?.dose_amount} {medicine?.dose_unit} • {t('dose_time')}: {scheduledTime}</Text>
         
+        {delayText ? (
+          <View style={styles.lateBadge}>
+            <Text style={styles.lateBadgeText}>⚠️ {delayText}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.warningBox}>
           <Text style={styles.warningText}>{t('alarm_warning')}</Text>
         </View>
@@ -172,4 +256,24 @@ const styles = StyleSheet.create({
   takeBtnText: { color: '#EF4444', fontSize: 20, fontWeight: '900' },
   snoozeBtn: { backgroundColor: 'rgba(0,0,0,0.3)', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center' },
   snoozeBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  lateBadge: {
+    marginTop: 15,
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1.5,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  lateBadgeText: {
+    color: '#DC2626',
+    fontWeight: '800',
+    fontSize: 14,
+  },
 });

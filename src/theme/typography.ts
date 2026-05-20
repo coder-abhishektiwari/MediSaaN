@@ -1,13 +1,12 @@
 import { Platform } from 'react-native';
 
 // Use system fonts that reliably support Indian scripts
-const base = Platform.OS === 'ios' ? 'System' : 'sans-serif';
 const bold = Platform.OS === 'ios' ? 'System' : 'sans-serif-medium';
 
 export const typography = {
-  displayLarge:  { fontSize: 30, fontWeight: '800' as const, lineHeight: 38 },
-  displayMedium: { fontSize: 24, fontWeight: '700' as const, lineHeight: 32 },
-  headingLarge:  { fontSize: 22, fontWeight: '700' as const, lineHeight: 30 },
+  displayLarge:  { fontSize: 30, fontWeight: '800' as const, lineHeight: 39, fontFamily: bold },
+  displayMedium: { fontSize: 24, fontWeight: '700' as const, lineHeight: 33, fontFamily: bold },
+  headingLarge:  { fontSize: 22, fontWeight: '700' as const, lineHeight: 31, fontFamily: bold },
   headingMedium: { fontSize: 18, fontWeight: '600' as const, lineHeight: 26 },
   headingSmall:  { fontSize: 16, fontWeight: '600' as const, lineHeight: 22 },
   bodyLarge:     { fontSize: 18, fontWeight: '400' as const, lineHeight: 28 },

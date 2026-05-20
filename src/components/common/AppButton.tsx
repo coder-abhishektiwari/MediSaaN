@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
 import { colors, typography, sizes, borderRadius } from '../../theme';
 
 export default function AppButton({ title, onPress, variant = 'primary', loading, disabled, icon, accessibilityLabel }: any) {
@@ -25,16 +25,29 @@ export default function AppButton({ title, onPress, variant = 'primary', loading
       accessibilityLabel={accessibilityLabel || title}
     >
       {loading ? <ActivityIndicator color={getTextColor()} /> : (
-        <>
+        <View style={styles.content}>
           {icon && <Text style={{ color: getTextColor(), marginRight: 8 }}>{icon}</Text>}
           <Text style={[styles.text, { color: getTextColor() }]}>{title}</Text>
-        </>
+        </View>
       )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  btn: { height: sizes.buttonHeight, borderRadius: borderRadius.md, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
+  btn: {
+    height: sizes.buttonHeight,
+    borderRadius: borderRadius.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    elevation: 3,
+    shadowColor: colors.cardShadow,
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   text: { ...typography.labelLarge, fontWeight: 'bold' }
 });

@@ -217,5 +217,9 @@
   "gallery": "Gallery",
   "pages": "Pages",
   "manage_permissions": "App Permissions",
-  "manage_permissions_sub": "Manage system-level permissions"
+  "manage_permissions_sub": "Manage system-level permissions",
+  "tool_my_medicines": "My Medicines",
+  "tool_scan_medicine": "Scan Medicine",
+  "tool_report_analyze": "Report\nAnalyze",
+  "tool_chat_bot": "Chat with\nBot"
 }

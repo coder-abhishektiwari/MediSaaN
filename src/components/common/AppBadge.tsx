@@ -4,13 +4,13 @@ import { colors, typography, borderRadius } from '../../theme';
 
 export default function AppBadge({ label, color = colors.primary }: any) {
   return (
-    <View style={[styles.badge, { backgroundColor: color + '20' }]}>
+    <View style={[styles.badge, { backgroundColor: color + '18', borderColor: color + '40' }]}>
       <Text style={[styles.text, { color }]}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: borderRadius.sm },
-  text: { ...typography.caption, fontWeight: 'bold' }
+  badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: borderRadius.full, borderWidth: 1 },
+  text: { ...typography.caption, fontWeight: '800' }
 });

@@ -205,5 +205,9 @@
   "history": "ઇતિહાસ",
   "skipped_medicines": "ચૂકી ગયેલ દવાઓ:",
   "percent_complete": "{{percent}}% પૂર્ણ",
-  "health_profile_title": "તમારી હેલ્થ પ્રોફાઇલ"
+  "health_profile_title": "તમારી હેલ્થ પ્રોફાઇલ",
+  "tool_my_medicines": "મારી\nદવાઓ",
+  "tool_scan_medicine": "દવા\nસ્કેન",
+  "tool_report_analyze": "રિપોર્ટ\nવિશ્લેષણ",
+  "tool_chat_bot": "બોટ સાથે\nચેટ"
 }

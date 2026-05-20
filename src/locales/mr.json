@@ -205,5 +205,9 @@
   "history": "इतिहास",
   "skipped_medicines": "वगळलेली औषधे:",
   "percent_complete": "{{percent}}% पूर्ण",
-  "health_profile_title": "तुमची आरोग्य प्रोफाइल"
+  "health_profile_title": "तुमची आरोग्य प्रोफाइल",
+  "tool_my_medicines": "माझी\nऔषधे",
+  "tool_scan_medicine": "औषध\nस्कॅन करा",
+  "tool_report_analyze": "अहवाल\nविश्लेषण",
+  "tool_chat_bot": "बॉटशी\nचॅट"
 }

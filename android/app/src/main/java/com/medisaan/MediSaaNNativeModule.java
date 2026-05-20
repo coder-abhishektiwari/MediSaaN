@@ -20,13 +20,24 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
+import android.media.MediaPlayer;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
 
 public class MediSaaNNativeModule extends ReactContextBaseJavaModule {
+    private static MediaPlayer mediaPlayer = null;
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
 
+    public static String initialAlarmId = null;
+    public static String initialAlarmMedicine = null;
+    public static String initialAlarmScheduledTime = null;
+    private static ReactApplicationContext reactContext = null;
+
     MediSaaNNativeModule(ReactApplicationContext context) {
         super(context);
+        reactContext = context;
     }
 
     @Override
@@ -45,8 +56,67 @@ public class MediSaaNNativeModule extends ReactContextBaseJavaModule {
         }
     }
 
+    public static void startAlarmSoundStatic(Context context) {
+        try {
+            if (mediaPlayer != null) {
+                try {
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
+                } catch (Exception e) {}
+                mediaPlayer = null;
+            }
+            Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            if (alarmUri == null) {
+                alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            }
+            if (alarmUri != null) {
+                mediaPlayer = new MediaPlayer();
+                mediaPlayer.setDataSource(context, alarmUri);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build());
+                } else {
+                    mediaPlayer.setAudioStreamType(android.media.AudioManager.STREAM_ALARM);
+                }
+                mediaPlayer.setLooping(true);
+                mediaPlayer.prepare();
+                mediaPlayer.start();
+            }
+        } catch (Exception e) {
+            android.util.Log.e("MediSaaN", "Failed to start static alarm sound: " + e.getMessage());
+        }
+    }
+
     @ReactMethod
-    public void scheduleAlarm(String id, double timestamp, String title, String body, Promise promise) {
+    public void startAlarmSound(Promise promise) {
+        try {
+            Context context = getCurrentActivity();
+            if (context == null) context = getReactApplicationContext();
+            startAlarmSoundStatic(context);
+            promise.resolve(true);
+        } catch (Exception e) {
+            promise.reject("SOUND_ERROR", e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void stopAlarmSound(Promise promise) {
+        try {
+            if (mediaPlayer != null) {
+                mediaPlayer.stop();
+                mediaPlayer.release();
+                mediaPlayer = null;
+            }
+            promise.resolve(true);
+        } catch (Exception e) {
+            promise.reject("SOUND_ERROR", e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void scheduleAlarm(String id, double timestamp, String title, String body, String medicineJson, String scheduledTime, Promise promise) {
         try {
             Context context = getReactApplicationContext();
             AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -54,6 +124,8 @@ public class MediSaaNNativeModule extends ReactContextBaseJavaModule {
             intent.putExtra("id", id);
             intent.putExtra("title", title);
             intent.putExtra("body", body);
+            intent.putExtra("medicine", medicineJson);
+            intent.putExtra("scheduledTime", scheduledTime);
 
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -71,6 +143,87 @@ public class MediSaaNNativeModule extends ReactContextBaseJavaModule {
         } catch (Exception e) {
             promise.reject("ALARM_ERROR", e.getMessage());
         }
+    }
+
+    public static void triggerAlarmEvent(String id, String medicineJson, String scheduledTime) {
+        initialAlarmId = id;
+        initialAlarmMedicine = medicineJson;
+        initialAlarmScheduledTime = scheduledTime;
+
+        if (reactContext != null) {
+            try {
+                WritableMap map = Arguments.createMap();
+                map.putString("id", id);
+                map.putString("medicine", medicineJson);
+                map.putString("scheduledTime", scheduledTime);
+                reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                    .emit("onAlarmTriggered", map);
+            } catch (Exception e) {
+                // React Context may not be initialized yet
+            }
+        }
+    }
+
+    @ReactMethod
+    public void getInitialAlarm(Promise promise) {
+        if (initialAlarmId != null) {
+            WritableMap map = Arguments.createMap();
+            map.putString("id", initialAlarmId);
+            map.putString("medicine", initialAlarmMedicine);
+            map.putString("scheduledTime", initialAlarmScheduledTime);
+
+            // Clear immediately on read
+            initialAlarmId = null;
+            initialAlarmMedicine = null;
+            initialAlarmScheduledTime = null;
+
+            promise.resolve(map);
+        } else {
+            promise.resolve(null);
+        }
+    }
+
+    @ReactMethod
+    public void showTimePicker(int initialHour, int initialMinute, Promise promise) {
+        android.app.Activity activity = getCurrentActivity();
+        if (activity == null) {
+            promise.reject("ACTIVITY_NULL", "Current Activity is null");
+            return;
+        }
+
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    android.app.TimePickerDialog timePickerDialog = new android.app.TimePickerDialog(
+                        activity,
+                        new android.app.TimePickerDialog.OnTimeSetListener() {
+                            @Override
+                            public void onTimeSet(android.widget.TimePicker view, int hourOfDay, int minute) {
+                                WritableMap map = Arguments.createMap();
+                                map.putInt("hour", hourOfDay);
+                                map.putInt("minute", minute);
+                                promise.resolve(map);
+                            }
+                        },
+                        initialHour,
+                        initialMinute,
+                        android.text.format.DateFormat.is24HourFormat(activity)
+                    );
+                    timePickerDialog.show();
+                } catch (Exception e) {
+                    promise.reject("TIME_PICKER_ERROR", e.getMessage());
+                }
+            }
+        });
+    }
+
+    @ReactMethod
+    public void clearInitialAlarm(Promise promise) {
+        initialAlarmId = null;
+        initialAlarmMedicine = null;
+        initialAlarmScheduledTime = null;
+        promise.resolve(true);
     }
 
     @ReactMethod

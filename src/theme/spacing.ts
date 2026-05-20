@@ -25,10 +25,10 @@ export const sizes = {
 
 export const borderRadius = {
   xs:   6,
-  sm:   10,
-  md:   14,
-  lg:   18,
-  xl:   24,
-  xxl:  32,
+  sm:   9,
+  md:   12,
+  lg:   16,
+  xl:   22,
+  xxl:  28,
   full: 999,
 };

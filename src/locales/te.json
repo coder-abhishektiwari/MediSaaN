@@ -205,5 +205,9 @@
   "history": "చరిత్ర",
   "skipped_medicines": "దాటవేసిన మందులు:",
   "percent_complete": "{{percent}}% పూర్తయింది",
-  "health_profile_title": "మీ ఆరోగ్య ప్రొఫైల్"
+  "health_profile_title": "మీ ఆరోగ్య ప్రొఫైల్",
+  "tool_my_medicines": "నా\nమందులు",
+  "tool_scan_medicine": "మందుల\nస్కాన్",
+  "tool_report_analyze": "రిపోర్்ட்\nవిశ్లేషణ",
+  "tool_chat_bot": "బాట్‌తో\nచాట్"
 }

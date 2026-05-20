@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Animated, StatusBar, Dimensions,
+  View, Text, StyleSheet, Animated, StatusBar,
 } from 'react-native';
-import { colors, typography, spacing } from '../theme';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { colors, typography, spacing, borderRadius } from '../theme';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { PermissionService } from '../services/PermissionService';
-
-const { width } = Dimensions.get('window');
 
 export default function SplashScreen({ navigation }: any) {
   const fadeAnim   = useRef(new Animated.Value(0)).current;
@@ -31,9 +31,22 @@ export default function SplashScreen({ navigation }: any) {
     ).start();
 
     const checkAndNavigate = async () => {
-      // Small delay for branding visibility
-      await new Promise(resolve => setTimeout(resolve, 2400));
+      // 1. Wait for up to 1500ms (1.5 seconds) for globalThis.pendingAlarm to be populated
+      let attempts = 0;
+      while (attempts < 15 && !(globalThis as any).pendingAlarm) {
+        await new Promise<void>(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      // 2. If an alarm was found/delivered, intercept immediately and redirect to AlarmScreen
+      if ((globalThis as any).pendingAlarm) {
+        const alarm = (globalThis as any).pendingAlarm;
+        (globalThis as any).pendingAlarm = null; // Clear immediately on launch intercept
+        navigation.replace('Alarm', alarm);
+        return;
+      }
       
+      // 3. Otherwise, proceed with standard checks
       const perms = await PermissionService.checkAll();
       if (!perms.camera || !perms.notifications) {
         navigation.replace('Permission');
@@ -47,21 +60,16 @@ export default function SplashScreen({ navigation }: any) {
     };
 
     checkAndNavigate();
-  }, []);
+  }, [fadeAnim, hasChosen, isProfileComplete, navigation, pulse, scaleAnim]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
-
-      {/* Background circles */}
-      <View style={styles.circleBg1} />
-      <View style={styles.circleBg2} />
+    <LinearGradient colors={[colors.primaryDark, '#0B5462', colors.primary]} style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primaryDark} />
 
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-        {/* Logo */}
         <Animated.View style={[styles.logoRing, { transform: [{ scale: pulse }] }]}>
           <View style={styles.logoInner}>
-            <Text style={styles.logoEmoji}>🌿</Text>
+            <Icon name="heart-pulse" size={42} color="#fff" />
           </View>
         </Animated.View>
 
@@ -79,34 +87,15 @@ export default function SplashScreen({ navigation }: any) {
           ))}
         </View>
       </Animated.View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  circleBg1: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    top: -80,
-    right: -80,
-  },
-  circleBg2: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    bottom: 40,
-    left: -60,
   },
   content: {
     alignItems: 'center',
@@ -115,7 +104,7 @@ const styles = StyleSheet.create({
   logoRing: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: borderRadius.xxl,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -126,12 +115,11 @@ const styles = StyleSheet.create({
   logoInner: {
     width: 76,
     height: 76,
-    borderRadius: 38,
+    borderRadius: borderRadius.xl,
     backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoEmoji: { fontSize: 36 },
   appName: {
     ...typography.displayLarge,
     color: '#FFFFFF',

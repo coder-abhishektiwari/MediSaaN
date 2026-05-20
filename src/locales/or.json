@@ -205,5 +205,9 @@
   "history": "ଇତିହାସ",
   "skipped_medicines": "ଛାଡ଼ି ଯାଇଥିବା ଔଷଧ:",
   "percent_complete": "{{percent}}% ସମ୍ପୂର୍ଣ୍ଣ",
-  "health_profile_title": "ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ପ୍ରୋଫାଇଲ୍"
+  "health_profile_title": "ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ପ୍ରୋଫାଇଲ୍",
+  "tool_my_medicines": "ମୋର\nମେଡିସିନ୍",
+  "tool_scan_medicine": "ମେଡିସିନ୍\nସ୍କାନ୍",
+  "tool_report_analyze": "ରିପୋର୍ଟ\nବିଶ୍ଳେଷଣ",
+  "tool_chat_bot": "ବୋଟ୍ ସହ\nଚାଟ୍"
 }

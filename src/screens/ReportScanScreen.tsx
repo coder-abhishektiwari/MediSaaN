@@ -245,7 +245,7 @@ export default function ReportScanScreen({ navigation }: any) {
   const { t } = useTranslation();
   const device      = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
-  const camera = useRef<CameraRef>(null);
+  const camera = useRef<Camera>(null);
 
   const { patient }  = usePatientStore();
   const { language } = useLanguageStore();
@@ -350,7 +350,7 @@ export default function ReportScanScreen({ navigation }: any) {
 
       setProcessingStage('processing');
       setScanStatus(t('reading_report'));
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
 
       setResult(data);
       setFrameState('candidate');

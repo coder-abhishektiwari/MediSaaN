@@ -55,3 +55,77 @@ export function getTodayLogs(patientId: number) {
     ORDER BY rl.action_time DESC
   `, [patientId, start.toISOString(), end.toISOString()]).rows?._array || [];
 }
+
+export function getAdherenceHistory(patientId: number) {
+  const logs = db.execute(`
+    SELECT rl.action, date(rl.action_time) as log_date 
+    FROM reminder_logs rl
+    JOIN medicines m ON m.id = rl.medicine_id
+    WHERE m.patient_id = ?
+    ORDER BY rl.action_time ASC
+  `, [patientId]).rows?._array || [];
+
+  // Group logs by date
+  const logsByDate: Record<string, { taken: number, skipped: number }> = {};
+  logs.forEach(log => {
+    if (!logsByDate[log.log_date]) {
+      logsByDate[log.log_date] = { taken: 0, skipped: 0 };
+    }
+    if (log.action === 'taken') logsByDate[log.log_date].taken++;
+    if (log.action === 'skipped') logsByDate[log.log_date].skipped++;
+  });
+
+  // Calculate overall Health Score (starts at 100)
+  let healthScore = 100;
+  Object.keys(logsByDate).forEach(date => {
+    const day = logsByDate[date];
+    if (day.skipped > 0) {
+      healthScore -= 20;
+    } else if (day.taken > 0) {
+      healthScore += 10;
+    }
+  });
+
+  // Calculate past 7 days trend
+  const trend: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const day = logsByDate[dateStr];
+    if (day) {
+      const total = day.taken + day.skipped;
+      if (total === 0) trend.push('No data');
+      else trend.push(`${Math.round((day.taken / total) * 100)}% taken`);
+    } else {
+      trend.push('No data');
+    }
+  }
+
+  return { healthScore, trend };
+}
+
+export function getDetailedAdherenceHistory(patientId: number) {
+  const logs = db.execute(`
+    SELECT rl.action, rl.scheduled_time, date(rl.action_time) as log_date, m.name
+    FROM reminder_logs rl
+    JOIN medicines m ON m.id = rl.medicine_id
+    WHERE m.patient_id = ?
+    ORDER BY rl.action_time DESC
+  `, [patientId]).rows?._array || [];
+
+  const historyByDate: Record<string, { date: string, scoreChange: number, skippedMedicines: {name: string, time: string}[] }> = {};
+
+  logs.forEach((log: any) => {
+    if (!historyByDate[log.log_date]) {
+      historyByDate[log.log_date] = { date: log.log_date, scoreChange: +10, skippedMedicines: [] };
+    }
+    if (log.action === 'skipped') {
+      historyByDate[log.log_date].scoreChange = -20;
+      historyByDate[log.log_date].skippedMedicines.push({ name: log.name, time: log.scheduled_time });
+    }
+  });
+
+  // Convert to array and sort by date descending
+  return Object.values(historyByDate).sort((a, b) => b.date.localeCompare(a.date));
+}

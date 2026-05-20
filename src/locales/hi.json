@@ -217,5 +217,9 @@
   "gallery": "गैलरी",
   "pages": "पेज",
   "manage_permissions": "ऐप अनुमतियां",
-  "manage_permissions_sub": "सिस्टम स्तर की अनुमतियां प्रबंधित करें"
+  "manage_permissions_sub": "सिस्टम स्तर की अनुमतियां प्रबंधित करें",
+  "tool_my_medicines": "मेरी\nदवाइयाँ",
+  "tool_scan_medicine": "दवाई\nस्कैन करें",
+  "tool_report_analyze": "रिपोर्ट\nविश्लेषण",
+  "tool_chat_bot": "बॉट से\nचैट करें"
 }

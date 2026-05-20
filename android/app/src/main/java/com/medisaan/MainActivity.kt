@@ -1,5 +1,7 @@
 package com.medisaan
 
+import android.content.Intent
+import android.os.Bundle
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -7,8 +9,18 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 class MainActivity : ReactActivity() {
 
-  override fun onCreate(savedInstanceState: android.os.Bundle?) {
+  override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(null)
+
+    // Check if launched by native alarm
+    val intent = intent
+    if (intent != null && intent.getBooleanExtra("isAlarmTrigger", false)) {
+      val id = intent.getStringExtra("id")
+      val medicine = intent.getStringExtra("medicine")
+      val scheduledTime = intent.getStringExtra("scheduledTime")
+      com.medisaan.MediSaaNNativeModule.triggerAlarmEvent(id, medicine, scheduledTime)
+    }
+
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
       setShowWhenLocked(true)
       setTurnScreenOn(true)
@@ -19,6 +31,18 @@ class MainActivity : ReactActivity() {
         android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
         android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
       )
+    }
+  }
+
+  override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+
+    if (intent != null && intent.getBooleanExtra("isAlarmTrigger", false)) {
+      val id = intent.getStringExtra("id")
+      val medicine = intent.getStringExtra("medicine")
+      val scheduledTime = intent.getStringExtra("scheduledTime")
+      com.medisaan.MediSaaNNativeModule.triggerAlarmEvent(id, medicine, scheduledTime)
     }
   }
 

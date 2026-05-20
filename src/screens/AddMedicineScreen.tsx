@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, StatusBar, SafeAreaView, Alert, Switch,
+  TextInput, StatusBar, SafeAreaView, Alert, Switch, Modal,
+  NativeModules,
 } from 'react-native';
 import { usePatientStore } from '../store/patientStore';
 import { addMedicine, updateMedicine } from '../db/queries/medicines';
@@ -53,6 +54,37 @@ export default function AddMedicineScreen({ navigation, route }: any) {
   const [imagePath, setImage]   = useState(editMed?.image_path || initialData?.image_path || '');
   const [scanCache, setCache]   = useState(editMed?.scan_cache_json || initialData?.scan_cache_json || '');
   const [saving, setSaving]     = useState(false);
+  const [pickerIndex, setPickerIndex] = useState<number | null>(null);
+  const [selectedHour, setSelectedHour] = useState('08');
+  const [selectedMinute, setSelectedMinute] = useState('00');
+
+  const openTimePicker = async (index: number) => {
+    const currentVal = doseTimes[index] || '08:00';
+    const [h, m] = currentVal.split(':').map(Number);
+    
+    const { MediSaaNNativeModule } = NativeModules;
+    if (MediSaaNNativeModule && MediSaaNNativeModule.showTimePicker) {
+      try {
+        const result = await MediSaaNNativeModule.showTimePicker(h, m);
+        if (result) {
+          const hourStr = result.hour.toString().padStart(2, '0');
+          const minuteStr = result.minute.toString().padStart(2, '0');
+          updateTime(index, `${hourStr}:${minuteStr}`);
+        }
+      } catch (err) {
+        console.warn('Failed to show native time picker, falling back to custom modal:', err);
+        // Fallback to custom modal picker
+        setSelectedHour(h.toString().padStart(2, '0'));
+        setSelectedMinute(m.toString().padStart(2, '0'));
+        setPickerIndex(index);
+      }
+    } else {
+      // Fallback to custom modal picker
+      setSelectedHour(h.toString().padStart(2, '0'));
+      setSelectedMinute(m.toString().padStart(2, '0'));
+      setPickerIndex(index);
+    }
+  };
 
   const setTimesCount = (count: number) => {
     const defaults = ['08:00', '14:00', '20:00', '22:00'];
@@ -172,9 +204,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
             <Text style={styles.fieldLabel}>Dose Times</Text>
             <View style={styles.timesRow}>
               {doseTimes.map((t: string, i: number) => (
-                <TextInput key={i} style={styles.timeInput} value={t}
-                  onChangeText={v => updateTime(i, v)} placeholder="HH:MM"
-                  placeholderTextColor={colors.textMuted} keyboardType="numbers-and-punctuation" />
+                <TimeButton key={i} time={t} onPress={() => openTimePicker(i)} />
               ))}
             </View>
           </View>
@@ -226,6 +256,74 @@ export default function AddMedicineScreen({ navigation, route }: any) {
           <Text style={styles.saveBtnText}>{saving ? 'Saving...' : '✓ Save Medicine'}</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal visible={pickerIndex !== null} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.pickerContainer}>
+            <Text style={styles.pickerTitle}>Set Dose Time</Text>
+            
+            <View style={styles.digitalDisplay}>
+              <Text style={styles.digitalText}>{selectedHour}</Text>
+              <Text style={styles.digitalColon}>:</Text>
+              <Text style={styles.digitalText}>{selectedMinute}</Text>
+            </View>
+
+            <View style={styles.pickersRow}>
+              <View style={styles.columnContainer}>
+                <Text style={styles.columnLabel}>Hour</Text>
+                <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
+                  {Array.from({ length: 24 }).map((_, i) => {
+                    const val = i.toString().padStart(2, '0');
+                    const isActive = val === selectedHour;
+                    return (
+                      <TouchableOpacity 
+                        key={i} 
+                        style={[styles.pickerItem, isActive && styles.pickerItemActive]} 
+                        onPress={() => setSelectedHour(val)}
+                      >
+                        <Text style={[styles.pickerItemText, isActive && styles.pickerItemTextActive]}>{val}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              <View style={styles.columnContainer}>
+                <Text style={styles.columnLabel}>Minute</Text>
+                <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
+                  {Array.from({ length: 60 }).map((_, i) => {
+                    const val = i.toString().padStart(2, '0');
+                    const isActive = val === selectedMinute;
+                    return (
+                      <TouchableOpacity 
+                        key={i} 
+                        style={[styles.pickerItem, isActive && styles.pickerItemActive]} 
+                        onPress={() => setSelectedMinute(val)}
+                      >
+                        <Text style={[styles.pickerItemText, isActive && styles.pickerItemTextActive]}>{val}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </View>
+
+            <View style={styles.pickerActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setPickerIndex(null)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmBtn} onPress={() => {
+                if (pickerIndex !== null) {
+                  updateTime(pickerIndex, `${selectedHour}:${selectedMinute}`);
+                }
+                setPickerIndex(null);
+              }}>
+                <Text style={styles.confirmBtnText}>Set Time</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -288,4 +386,126 @@ const styles = StyleSheet.create({
     elevation: 4, shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
   },
   saveBtnText: { ...typography.labelLarge, color: '#fff' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerContainer: {
+    width: 320,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    elevation: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  pickerTitle: {
+    ...typography.headingMedium,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+  },
+  digitalDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryLight,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.primary + '30',
+    marginBottom: spacing.lg,
+  },
+  digitalText: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: colors.primary,
+    fontFamily: 'monospace',
+  },
+  digitalColon: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: colors.primary,
+    marginHorizontal: 8,
+  },
+  pickersRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    height: 180,
+    marginBottom: spacing.xl,
+  },
+  columnContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  columnLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontWeight: '700',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  columnScroll: {
+    flex: 1,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.background,
+  },
+  pickerItem: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerItemActive: {
+    backgroundColor: colors.primary,
+  },
+  pickerItemText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  pickerItemTextActive: {
+    color: '#ffffff',
+    fontWeight: '800',
+  },
+  pickerActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: borderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  cancelBtnText: {
+    ...typography.labelMedium,
+    color: colors.textSecondary,
+  },
+  confirmBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: borderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+  },
+  confirmBtnText: {
+    ...typography.labelMedium,
+    color: '#ffffff',
+    fontWeight: '700',
+  },
 });

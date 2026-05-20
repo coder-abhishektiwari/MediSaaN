@@ -205,5 +205,9 @@
   "history": "تاریخ",
   "skipped_medicines": "چھوٹی ہوئی دوائیں:",
   "percent_complete": "{{percent}}% مکمل",
-  "health_profile_title": "آپ کا صحت پروفائل"
+  "health_profile_title": "آپ کا صحت پروفائل",
+  "tool_my_medicines": "میری\nادویات",
+  "tool_scan_medicine": "دوا\nاسکین",
+  "tool_report_analyze": "رپورٹ کا\nتجزیہ",
+  "tool_chat_bot": "بوٹ سے\nبات"
 }

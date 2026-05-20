@@ -10,7 +10,7 @@ import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { scanMedicine } from '../api/gemini';
 import { saveScanResult, getScanHistory, deleteScanResult } from '../db/queries/reports';
-import { addMedicine, getMedicines } from '../db/queries/medicines';
+import { getMedicines } from '../db/queries/medicines';
 import { compressAndEncode, savePermanentImage } from '../utils/imageUtils';
 import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
@@ -185,21 +185,8 @@ const so = StyleSheet.create({
   dotDone:  { backgroundColor: 'rgba(34,197,94,0.5)' },
 });
 
-// ─── HOW_TO_LABEL helper ─────────────────────────────────────────────────────
-
-function HOW_TO_LABEL(val: string) {
-  const m: Record<string, string> = {
-    before_food: '🍽 Before Food',
-    after_food:  '🍽 After Food',
-    with_food:   '🍽 With Food',
-    anytime:     '⏰ Anytime',
-  };
-  return m[val] || val;
-}
-
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
-const TABS = ['Uses', 'Dosage', 'Side Effects', 'Warnings', 'How to Take'];
 type FrameState     = 'empty' | 'candidate' | 'invalid';
 type ProcessingStage = 'idle' | 'capturing' | 'validating' | 'processing';
 
@@ -211,7 +198,7 @@ export default function QuickScanScreen({ navigation }: any) {
   const { t } = useTranslation();
   const device      = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
-  const camera = useRef<CameraRef>(null);
+  const camera = useRef<Camera>(null);
 
   const { patient }  = usePatientStore();
   const { language } = useLanguageStore();
@@ -287,7 +274,7 @@ export default function QuickScanScreen({ navigation }: any) {
                    hJson.strength?.toLowerCase() === data.strength?.toLowerCase();
           } catch { return false; }
         });
-        if (duplicate) deleteScan(duplicate.id);
+        if (duplicate) deleteScanResult(duplicate.id);
 
         saveScanResult(patient.id, 'medicine', permUri, JSON.stringify(data), 'normal', false);
         setCurrentScanUri(permUri);

@@ -3,17 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Image, SafeAreaView, StatusBar, Modal, Alert, Dimensions
 } from 'react-native';
-import { 
-  GestureHandlerRootView, 
-  Gesture, 
-  GestureDetector 
-} from 'react-native-gesture-handler';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
-  withSpring 
-} from 'react-native-reanimated';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import dayjs from 'dayjs';
 import { TTSService } from '../services/TTSService';
@@ -76,7 +66,7 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
   let data: any = {};
   try {
     data = JSON.parse(item.result_json);
-  } catch (e) {}
+  } catch {}
 
   const isMedicine = item.type === 'medicine';
 
@@ -255,72 +245,31 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 function ZoomViewer({ uri, onClose }: { uri: string, onClose: () => void }) {
-  const scale = useSharedValue(1);
-  const savedScale = useSharedValue(1);
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const savedTranslateX = useSharedValue(0);
-  const savedTranslateY = useSharedValue(0);
-
-  const pinchGesture = Gesture.Pinch()
-    .onUpdate((e) => {
-      scale.value = savedScale.value * e.scale;
-    })
-    .onEnd(() => {
-      if (scale.value < 1) {
-        scale.value = withTiming(1);
-        savedScale.value = 1;
-      } else {
-        savedScale.value = scale.value;
-      }
-    });
-
-  const panGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      translateX.value = savedTranslateX.value + e.translationX;
-      translateY.value = savedTranslateY.value + e.translationY;
-    })
-    .onEnd(() => {
-      // Return to center if scale is 1
-      if (scale.value <= 1.1) {
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-        savedTranslateX.value = 0;
-        savedTranslateY.value = 0;
-      } else {
-        savedTranslateX.value = translateX.value;
-        savedTranslateY.value = translateY.value;
-      }
-    });
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
-  }));
-
-  const composedGesture = Gesture.Simultaneous(pinchGesture, panGesture);
-
   return (
-    <GestureHandlerRootView style={styles.zoomContainer}>
+    <View style={styles.zoomContainer}>
       <SafeAreaView style={styles.zoomHeader}>
         <TouchableOpacity onPress={onClose} style={styles.zoomClose}>
-          <Text style={styles.zoomCloseText}>✕ Close</Text>
+          <Icon name="close" size={22} color="#fff" />
+          <Text style={styles.zoomCloseText}>Close</Text>
         </TouchableOpacity>
       </SafeAreaView>
       
-      <GestureDetector gesture={composedGesture}>
-        <Animated.View style={styles.zoomContent}>
-          <Animated.Image 
-            source={{ uri }} 
-            style={[styles.zoomImage, animatedStyle]} 
-            resizeMode="contain" 
-          />
-        </Animated.View>
-      </GestureDetector>
-    </GestureHandlerRootView>
+      <ScrollView
+        style={styles.zoomScroll}
+        contentContainerStyle={styles.zoomContent}
+        maximumZoomScale={4}
+        minimumZoomScale={1}
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        bouncesZoom
+      >
+        <Image 
+          source={{ uri }} 
+          style={styles.zoomImage} 
+          resizeMode="contain" 
+        />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -404,8 +353,9 @@ const styles = StyleSheet.create({
   alreadyText: { ...typography.labelMedium, color: colors.success, fontWeight: '700' },
   zoomContainer: { flex: 1, backgroundColor: '#000' },
   zoomHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, backgroundColor: 'rgba(0,0,0,0.5)' },
-  zoomClose: { padding: 16, alignItems: 'flex-end' },
+  zoomClose: { padding: 16, alignItems: 'center', justifyContent: 'flex-end', flexDirection: 'row', gap: 8 },
   zoomCloseText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  zoomScroll: { flex: 1 },
   zoomContent: { flex: 1, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   zoomImage: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.8 },
 });

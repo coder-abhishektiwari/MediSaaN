@@ -205,5 +205,9 @@
   "history": "ಇತಿಹಾಸ",
   "skipped_medicines": "ಬಿಟ್ಟುಹೋದ ಮಾತ್ರೆಗಳು:",
   "percent_complete": "{{percent}}% ಪೂರ್ಣಗೊಂಡಿದೆ",
-  "health_profile_title": "ನಿಮ್ಮ ಆರೋಗ್ಯ ಪ್ರೊಫೈಲ್"
+  "health_profile_title": "ನಿಮ್ಮ ಆರೋಗ್ಯ ಪ್ರೊಫೈಲ್",
+  "tool_my_medicines": "ನನ್ನ\nಔಷಧಿಗಳು",
+  "tool_scan_medicine": "ಔಷಧಿ\nಸ್ಕ್ಯಾನ್",
+  "tool_report_analyze": "ವರದಿ\nವಿಶ್ಲೇಷಣೆ",
+  "tool_chat_bot": "ಬಾಟ್ ಜೊತೆ\nಚಾಟ್"
 }

@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
   SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Animated,
-  Modal, Dimensions, Easing,
+  Modal, Easing,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
@@ -13,7 +14,7 @@ import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
 import { STTService } from '../services/STTService';
 import { createSession, saveMessage, getMessages, getLastSession } from '../db/queries/chat';
-import { colors, typography, spacing, borderRadius, sizes } from '../theme';
+import { colors, typography, spacing, borderRadius } from '../theme';
 import dayjs from 'dayjs';
 
 // ─── Language config ──────────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ function Bubble({ msg, onSpeak }: { msg: ChatMessage; onSpeak: (t: string) => vo
     <View style={[bub.row, isBot ? bub.rowBot : bub.rowUser]}>
       {isBot && (
         <View style={bub.avatar}>
-          <Text style={bub.avatarText}>M</Text>
+          <Icon name="robot-happy-outline" size={18} color="#fff" />
         </View>
       )}
       <View style={[bub.bubble, isBot ? bub.bubbleBot : bub.bubbleUser]}>
@@ -44,7 +45,7 @@ function Bubble({ msg, onSpeak }: { msg: ChatMessage; onSpeak: (t: string) => vo
           <Text style={bub.time}>{msg.time}</Text>
           {isBot && (
             <TouchableOpacity onPress={() => onSpeak(msg.content)} style={bub.speakBtn}>
-              <Text style={bub.speakIcon}>🔊</Text>
+              <Icon name="volume-high" size={15} color={colors.primary} />
             </TouchableOpacity>
           )}
         </View>
@@ -56,18 +57,16 @@ const bub = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md, paddingHorizontal: spacing.lg, alignItems: 'flex-end' },
   rowBot: { justifyContent: 'flex-start' },
   rowUser: { justifyContent: 'flex-end' },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
-  avatarText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  bubble: { maxWidth: '78%', borderRadius: borderRadius.lg, padding: spacing.lg, gap: 6 },
-  bubbleBot: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 4 },
-  bubbleUser: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
+  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  bubble: { maxWidth: '78%', borderRadius: borderRadius.xl, padding: spacing.lg, gap: 6 },
+  bubbleBot: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 6 },
+  bubbleUser: { backgroundColor: colors.primaryDark, borderBottomRightRadius: 6 },
   text: { ...typography.bodyMedium, lineHeight: 24 },
   textBot: { color: colors.textPrimary },
   textUser: { color: '#fff' },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   time: { ...typography.tiny, color: colors.textMuted },
   speakBtn: { padding: 2 },
-  speakIcon: { fontSize: 14 },
 });
 
 // ─── Typing Indicator ─────────────────────────────────────────────────────────
@@ -86,7 +85,7 @@ function TypingIndicator() {
   }, []);
   return (
     <View style={ti.row}>
-      <View style={ti.avatar}><Text style={ti.avatarText}>M</Text></View>
+      <View style={ti.avatar}><Icon name="robot-happy-outline" size={18} color="#fff" /></View>
       <View style={ti.bubble}>
         {[dot1, dot2, dot3].map((d, i) => (
           <Animated.View key={i} style={[ti.dot, { transform: [{ translateY: d }] }]} />
@@ -97,15 +96,12 @@ function TypingIndicator() {
 }
 const ti = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, marginBottom: spacing.md, alignItems: 'flex-end' },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  bubble: { flexDirection: 'row', gap: 5, backgroundColor: colors.surface, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.border, padding: 16, alignItems: 'center' },
+  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center' },
+  bubble: { flexDirection: 'row', gap: 5, backgroundColor: colors.surface, borderRadius: borderRadius.xl, borderWidth: 1, borderColor: colors.border, padding: 16, alignItems: 'center' },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary },
 });
 
 // ─── Voice Orb animation ──────────────────────────────────────────────────────
-const { width: SW, height: SH } = Dimensions.get('window');
-
 type VoiceState = 'idle' | 'listening' | 'processing' | 'speaking';
 
 function VoiceOrb({ state }: { state: VoiceState }) {
@@ -143,10 +139,10 @@ function VoiceOrb({ state }: { state: VoiceState }) {
 
   const rotateInterp = rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
-  const orbColor = state === 'idle' ? '#5B8AF5'
-    : state === 'listening' ? '#22C55E'
+  const orbColor = state === 'idle' ? colors.primary
+    : state === 'listening' ? colors.success
       : state === 'speaking' ? '#F59E0B'
-        : '#A78BFA'; // processing
+        : colors.info; // processing
 
   const ringOpacity = state === 'listening' ? 0.25 : 0;
 
@@ -170,7 +166,7 @@ function VoiceOrb({ state }: { state: VoiceState }) {
           { backgroundColor: orbColor, transform: [{ scale: orbScale }, { rotate: state === 'processing' ? rotateInterp : '0deg' }] },
         ]}
       >
-        <Text style={vo.orbLetter}>M</Text>
+        <Icon name={state === 'listening' ? 'microphone' : state === 'speaking' ? 'volume-high' : 'robot-happy-outline'} size={44} color="#fff" />
       </Animated.View>
     </View>
   );
@@ -191,7 +187,6 @@ const vo = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 6 },
     elevation: 10,
   },
-  orbLetter: { color: '#fff', fontSize: 40, fontWeight: '800', letterSpacing: -1 },
 });
 
 // ─── Voice Modal ──────────────────────────────────────────────────────────────
@@ -204,7 +199,7 @@ interface VoiceModalProps {
   patientName: string;
 }
 
-function VoiceModal({ visible, onClose, onSend, language, locale, patientName }: VoiceModalProps) {
+function VoiceModal({ visible, onClose, onSend, language: _language, locale, patientName }: VoiceModalProps) {
   const { t } = useTranslation();
   const lc = {
     voiceHint: t('chat_voice_hint'),
@@ -263,8 +258,8 @@ function VoiceModal({ visible, onClose, onSend, language, locale, patientName }:
       setTranscript('');
       setVoiceState('idle');
       // Small delay so modal animation doesn't interfere
-      const t = setTimeout(() => startListening(), 400);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => startListening(), 400);
+      return () => clearTimeout(timer);
     } else {
       stopListeningNow();
     }
@@ -327,7 +322,7 @@ function VoiceModal({ visible, onClose, onSend, language, locale, patientName }:
         {/* Top bar */}
         <View style={vm.topBar}>
           <TouchableOpacity style={vm.closeBtn} onPress={onClose}>
-            <Text style={vm.closeIcon}>✕</Text>
+          <Icon name="close" size={22} color="#fff" />
           </TouchableOpacity>
           <Text style={vm.topTitle}>MediSaaN Voice</Text>
           <View style={{ width: 40 }} />
@@ -335,7 +330,8 @@ function VoiceModal({ visible, onClose, onSend, language, locale, patientName }:
 
         {/* Patient chip */}
         <View style={vm.patientChip}>
-          <Text style={vm.patientChipText}>👤 {patientName}</Text>
+          <Icon name="account-heart-outline" size={15} color="#BDF5EA" />
+          <Text style={vm.patientChipText}>{patientName}</Text>
         </View>
 
         {/* Center — Orb */}
@@ -360,7 +356,8 @@ function VoiceModal({ visible, onClose, onSend, language, locale, patientName }:
         <View style={vm.bottom}>
           {voiceState === 'speaking' && (
             <TouchableOpacity style={vm.interruptBtn} onPress={stopAI}>
-              <Text style={vm.interruptText}>⏹ {lc.interruptLabel}</Text>
+              <Icon name="stop-circle-outline" size={18} color={colors.warning} />
+              <Text style={vm.interruptText}>{lc.interruptLabel}</Text>
             </TouchableOpacity>
           )}
           <WaveformBars active={voiceState === 'listening' || voiceState === 'speaking'} />
@@ -374,10 +371,10 @@ function VoiceModal({ visible, onClose, onSend, language, locale, patientName }:
 }
 
 function WaveformBars({ active }: { active: boolean }) {
-  const bars = Array.from({ length: 24 }, (_, i) => useRef(new Animated.Value(4)).current);
+  const bars = useRef(Array.from({ length: 24 }, () => new Animated.Value(4))).current;
   useEffect(() => {
     if (active) {
-      bars.forEach((b, i) => {
+      bars.forEach((b) => {
         Animated.loop(Animated.sequence([
           Animated.timing(b, {
             toValue: 4 + Math.random() * 28,
@@ -390,7 +387,7 @@ function WaveformBars({ active }: { active: boolean }) {
     } else {
       bars.forEach(b => b.setValue(4));
     }
-  }, [active]);
+  }, [active, bars]);
 
   return (
     <View style={wf.row}>
@@ -414,7 +411,7 @@ const wf = StyleSheet.create({
 const vm = StyleSheet.create({
   fullscreen: {
     flex: 1,
-    backgroundColor: '#0A0A1A',   // deep dark — not pure black
+    backgroundColor: colors.ink,
     alignItems: 'center',
   },
   topBar: {
@@ -427,16 +424,16 @@ const vm = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center', alignItems: 'center',
   },
-  closeIcon: { fontSize: 18, color: '#fff', fontWeight: '600' },
   topTitle: { color: '#fff', fontSize: 18, fontWeight: '700', letterSpacing: 0.5 },
 
   patientChip: {
     paddingHorizontal: 18, paddingVertical: 6,
-    backgroundColor: 'rgba(91,138,245,0.15)',
-    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(91,138,245,0.35)',
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    backgroundColor: 'rgba(52,211,153,0.12)',
+    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(52,211,153,0.35)',
     marginBottom: 12,
   },
-  patientChipText: { color: '#7BA7FF', fontSize: 13, fontWeight: '500' },
+  patientChipText: { color: '#BDF5EA', fontSize: 13, fontWeight: '700' },
 
   center: {
     flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20,
@@ -466,6 +463,7 @@ const vm = StyleSheet.create({
   },
   interruptBtn: {
     paddingHorizontal: 32, paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: 'rgba(245,158,11,0.15)',
     borderRadius: 30, borderWidth: 1.5, borderColor: '#F59E0B',
   },
@@ -484,7 +482,7 @@ export default function ChatScreen({ navigation }: any) {
   const { isVoiceModeActive, setVoiceModeActive } = useVoiceStore();
 
   const lc = {
-    welcome: () => t('chat_welcome', { name: patient.name || t('chat_default_user') }),
+    welcome: (name?: string) => t('chat_welcome', { name: name || patient?.name || t('chat_default_user') }),
     quickPrompts: QUICK_PROMPTS.map(prompt => ({
       id: prompt.id,
       label: t(prompt.labelKey),
@@ -602,10 +600,10 @@ export default function ChatScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+          <Icon name="arrow-left" size={22} color={colors.primaryDark} />
         </TouchableOpacity>
         <View style={styles.botInfo}>
-          <View style={styles.botAvatar}><Text style={styles.botAvatarText}>M</Text></View>
+          <View style={styles.botAvatar}><Icon name="robot-happy-outline" size={23} color="#fff" /></View>
           <View>
             <Text style={styles.botName}>MediSaaN Bot</Text>
             <Text style={styles.botStatus}>{lc.botStatus}</Text>
@@ -619,7 +617,7 @@ export default function ChatScreen({ navigation }: any) {
             setVoiceModeActive(true);
           }}
         >
-          <Text style={styles.voiceModeBtnText}>🎙 Voice</Text>
+          <Text style={styles.voiceModeBtnText}>Voice</Text>
         </TouchableOpacity>
       </View>
 
@@ -627,7 +625,7 @@ export default function ChatScreen({ navigation }: any) {
       {patient && (
         <View style={styles.contextStrip}>
           <Text style={styles.contextText} numberOfLines={1}>
-            👤 {patient.name}, {patient.age}yr · {(patient.conditions || []).join(', ') || 'No conditions'}
+            {patient.name}, {patient.age}yr · {(patient.conditions || []).join(', ') || 'No conditions'}
           </Text>
         </View>
       )}
@@ -669,7 +667,7 @@ export default function ChatScreen({ navigation }: any) {
             onPress={toggleMic}
             accessibilityLabel={isListening ? 'Stop listening' : 'Start voice input'}
           >
-            <Text style={styles.micIcon}>{isListening ? '⏹' : '🎙'}</Text>
+            <Icon name={isListening ? 'stop' : 'microphone'} size={22} color={isListening ? '#fff' : colors.primaryDark} />
           </TouchableOpacity>
           <TextInput
             style={styles.input}
@@ -687,7 +685,7 @@ export default function ChatScreen({ navigation }: any) {
             onPress={() => sendMessage(input)}
             disabled={!input.trim() || loading}
           >
-            <Text style={styles.sendIcon}>➤</Text>
+            <Icon name="send" size={19} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -718,12 +716,10 @@ const styles = StyleSheet.create({
     padding: spacing.lg, backgroundColor: colors.surface,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  backText: { ...typography.headingLarge, color: colors.primary },
+  backBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primaryLight },
   botInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  botAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
-  botAvatarText: { color: '#fff', ...typography.headingSmall },
-  botName: { ...typography.headingSmall, color: colors.textPrimary },
+  botAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center' },
+  botName: { ...typography.headingSmall, color: colors.ink },
   botStatus: { ...typography.tiny, color: colors.success },
   voiceModeBtn: {
     paddingHorizontal: 14, paddingVertical: 8,
@@ -731,9 +727,9 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     borderWidth: 1.5, borderColor: colors.primary,
   },
-  voiceModeBtnText: { ...typography.caption, color: colors.primary, fontWeight: '700' },
+  voiceModeBtnText: { ...typography.caption, color: colors.primaryDark, fontWeight: '800' },
   contextStrip: { backgroundColor: colors.primaryLight, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
-  contextText: { ...typography.caption, color: colors.primary },
+  contextText: { ...typography.caption, color: colors.primaryDark, fontWeight: '700' },
   promptsWrap: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
   promptsList: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: 8 },
   promptChip: {
@@ -746,19 +742,17 @@ const styles = StyleSheet.create({
   messageList: { paddingVertical: spacing.lg, paddingBottom: 8 },
   inputRow: {
     flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm,
-    padding: spacing.md, backgroundColor: colors.surface,
+    padding: spacing.md, paddingBottom: spacing.lg, backgroundColor: colors.surface,
     borderTopWidth: 1, borderTopColor: colors.border,
   },
   micBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
-  micBtnActive: { backgroundColor: colors.primary },
-  micIcon: { fontSize: 22 },
+  micBtnActive: { backgroundColor: colors.primaryDark },
   input: {
     flex: 1, backgroundColor: colors.background,
-    borderRadius: borderRadius.md, borderWidth: 1.5, borderColor: colors.border,
+    borderRadius: borderRadius.lg, borderWidth: 1.5, borderColor: colors.border,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
     ...typography.bodyMedium, color: colors.textPrimary, maxHeight: 100,
   },
-  sendBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
+  sendBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center' },
   sendBtnDisabled: { backgroundColor: colors.border },
-  sendIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
 });

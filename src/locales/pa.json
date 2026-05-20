@@ -205,5 +205,9 @@
   "history": "ਇਤਿਹਾਸ",
   "skipped_medicines": "ਛੁੱਟੀਆਂ ਹੋਈਆਂ ਦਵਾਈਆਂ:",
   "percent_complete": "{{percent}}% ਪੂਰਾ",
-  "health_profile_title": "ਤੁਹਾਡੀ ਸਿਹਤ ਪ੍ਰੋਫਾਈਲ"
+  "health_profile_title": "ਤੁਹਾਡੀ ਸਿਹਤ ਪ੍ਰੋਫਾਈਲ",
+  "tool_my_medicines": "ਮੇਰੀਆਂ\nਦਵਾਈਆਂ",
+  "tool_scan_medicine": "ਦਵਾਈ\nਸਕੈਨ",
+  "tool_report_analyze": "ਰਿਪੋਰਟ\nਵਿਸ਼ਲੇਸ਼ਣ",
+  "tool_chat_bot": "ਬੋਟ ਨਾਲ\nਗੱलਬਾਤ"
 }

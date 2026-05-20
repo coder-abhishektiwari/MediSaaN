@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useVoiceStore } from '../store/voiceStore';
 import { navigationRef } from '../navigation/navigationRef';
 import { colors, spacing, borderRadius, sizes } from '../theme';
-
-const { width, height } = Dimensions.get('window');
 
 export default function FloatingVoiceButton() {
   const { isVoiceModeActive } = useVoiceStore();
@@ -17,7 +16,7 @@ export default function FloatingVoiceButton() {
       onPress={() => (navigationRef as any).navigate('Chat')}
       activeOpacity={0.8}
     >
-      <Text style={styles.icon}>🎙</Text>
+      <Icon name="microphone" size={18} color="#fff" />
       <Text style={styles.label}>Voice Active</Text>
     </TouchableOpacity>
   );
@@ -28,7 +27,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: sizes.tabBarHeight + 20,
     right: 20,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryDark,
     borderRadius: borderRadius.xl,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -41,9 +40,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     zIndex: 1000,
-  },
-  icon: {
-    fontSize: 20,
   },
   label: {
     color: '#fff',

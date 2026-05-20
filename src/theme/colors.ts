@@ -1,87 +1,92 @@
 export const colors = {
-  primary:       '#22C7C9', // Logo cyan
-  primaryLight:  '#E7FAFA',
-  primaryDark:   '#123B8F', // Deep blue from logo
+  primary:       '#155E75',
+  primaryLight:  '#E6F7F8',
+  primaryDark:   '#0F2E4A',
 
-  accent:        '#4DD9D5',
-  accentLight:   '#EAFDFC',
+  accent:        '#34D399',
+  accentLight:   '#E9FBF4',
 
-  success:       '#1FBF9A',
-  successLight:  '#E7FAF5',
+  success:       '#0F9F7A',
+  successLight:  '#E5F8F1',
 
-  warning:       '#3FA9F5',
-  warningLight:  '#EAF5FE',
+  warning:       '#F59E0B',
+  warningLight:  '#FFF7E6',
 
-  danger:        '#1D4ED8',
-  dangerLight:   '#E8F0FE',
+  danger:        '#DC2626',
+  dangerLight:   '#FEF2F2',
 
-  info:          '#2563EB',
-  infoLight:     '#EDF4FF',
+  info:          '#4F46E5',
+  infoLight:     '#EEF2FF',
 
-  background:    '#F7FAFC',
+  background:    '#F4F8FB',
   surface:       '#FFFFFF',
-  surfaceAlt:    '#F0F5FA',
+  surfaceAlt:    '#EAF2F6',
+  surfaceGlass:  'rgba(255,255,255,0.88)',
+  ink:           '#071826',
 
-  textPrimary:   '#0F172A',
-  textSecondary: '#475569',
-  textMuted:     '#94A3B8',
+  textPrimary:   '#102033',
+  textSecondary: '#526579',
+  textMuted:     '#8EA0B4',
 
-  border:        '#DCE6F2',
-  divider:       '#EAF1F8',
+  border:        '#D7E5EE',
+  divider:       '#E8F0F5',
 
-  overlay:       'rgba(0,0,0,0.55)',
+  overlay:       'rgba(7,24,38,0.62)',
 
-  primaryGradientStart: '#123B8F',
-  primaryGradientEnd:   '#22C7C9',
+  primaryGradientStart: '#0F2E4A',
+  primaryGradientEnd:   '#0EA5A5',
+  clinicalGradientStart: '#F8FCFD',
+  clinicalGradientEnd:   '#E7F4F8',
+  cardShadow: '#0F2E4A',
 };
 
 export const statusColors = {
   normal: {
-    bg: '#E8FCF7',
-    text: '#0F8F73',
-    border: '#1FBF9A',
+    bg: '#E5F8F1',
+    text: '#08745B',
+    border: '#0F9F7A',
   },
 
   high: {
-    bg: '#EEF4FF',
-    text: '#1D4ED8',
-    border: '#2563EB',
+    bg: '#FFF7E6',
+    text: '#A15C07',
+    border: '#F59E0B',
   },
 
   low: {
-    bg: '#EAFDFC',
-    text: '#0F766E',
-    border: '#22C7C9',
+    bg: '#E6F7F8',
+    text: '#155E75',
+    border: '#0EA5A5',
   },
 
   critical: {
-    bg: '#DBEAFE',
-    text: '#123B8F',
-    border: '#1E40AF',
+    bg: '#FEF2F2',
+    text: '#B91C1C',
+    border: '#DC2626',
   },
 };
 
 export const severityColors = {
   normal: {
-    bg: '#1FBF9A',
+    bg: '#0F9F7A',
     icon: '✅',
     label: 'Normal',
   },
 
   mild_concern: {
-    bg: '#22C7C9',
+    bg: '#0EA5A5',
     icon: '⚠️',
     label: 'Mild Concern',
   },
 
   needs_attention: {
-    bg: '#2563EB',
+    bg: '#F59E0B',
     icon: '🔵',
     label: 'Needs Attention',
   },
 
   urgent: {
-    bg: '#123B8F',
+    bg: '#DC2626',
     icon: '🚨',
     label: 'Urgent',
   },

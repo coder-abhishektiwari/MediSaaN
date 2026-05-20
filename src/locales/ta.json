@@ -205,5 +205,9 @@
   "history": "வரலாறு",
   "skipped_medicines": "தவிர்க்கப்பட்ட மருந்துகள்:",
   "percent_complete": "{{percent}}% முடிந்தது",
-  "health_profile_title": "உங்கள் ஆரோக்கிய விவரம்"
+  "health_profile_title": "உங்கள் ஆரோக்கிய விவரம்",
+  "tool_my_medicines": "என்\nமருந்துகள்",
+  "tool_scan_medicine": "மருந்து\nஸ்கேன்",
+  "tool_report_analyze": "அறிக்கை\nஆய்வு",
+  "tool_chat_bot": "பாட்டுடன்\nஅரட்டை"
 }

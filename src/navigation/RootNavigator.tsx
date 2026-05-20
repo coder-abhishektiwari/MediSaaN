@@ -10,6 +10,7 @@ import { NotificationService } from '../services/NotificationService';
 import { initVolumeShortcuts } from '../services/VolumeShortcutService';
 import { TTSService } from '../services/TTSService';
 import notifee, { EventType } from '@notifee/react-native';
+import { NativeModules, DeviceEventEmitter } from 'react-native';
 
 import SplashScreen from '../screens/SplashScreen';
 import LanguagePickerScreen from '../screens/LanguagePickerScreen';
@@ -25,6 +26,7 @@ import HistoryDetailScreen from '../screens/HistoryDetailScreen';
 import MedicineInsightScreen from '../screens/MedicineInsightScreen';
 import AlarmScreen from '../screens/AlarmScreen';
 import PermissionScreen from '../screens/PermissionScreen';
+import StreakHistoryScreen from '../screens/StreakHistoryScreen';
 import FloatingVoiceButton from '../components/FloatingVoiceButton';
 import { PermissionService } from '../services/PermissionService';
 
@@ -61,31 +63,85 @@ export default function RootNavigator() {
   }, []);
 
   useEffect(() => {
-    // Handle notification launch
+    const { MediSaaNNativeModule } = NativeModules;
+
+    // Handle notification launch (Notifee)
     notifee.getInitialNotification().then(notification => {
       if (notification?.notification.data?.type === 'alarm') {
         const data = notification.notification.data;
-        setTimeout(() => {
-          (navigationRef as any).navigate('Alarm', {
-            medicine: JSON.parse(data.medicine as string),
-            scheduledTime: data.scheduledTime,
-            notificationId: notification.notification.id
-          });
-        }, 1000);
+        const alarmPayload = {
+          medicine: JSON.parse(data.medicine as string),
+          scheduledTime: data.scheduledTime,
+          notificationId: notification.notification.id
+        };
+        (globalThis as any).pendingAlarm = alarmPayload;
       }
     });
 
-    // Handle foreground notifications
-    return notifee.onForegroundEvent(({ type, detail }) => {
+    // Handle Native Alarm Manager Launch (Cold Start)
+    if (MediSaaNNativeModule && MediSaaNNativeModule.getInitialAlarm) {
+      MediSaaNNativeModule.getInitialAlarm().then((alarm: any) => {
+        if (alarm && alarm.medicine) {
+          try {
+            const medObj = typeof alarm.medicine === 'string' ? JSON.parse(alarm.medicine) : alarm.medicine;
+            const alarmPayload = {
+              medicine: medObj,
+              scheduledTime: alarm.scheduledTime,
+              notificationId: alarm.id
+            };
+            (globalThis as any).pendingAlarm = alarmPayload;
+          } catch (e) {
+            console.error('Failed to parse initial alarm medicine:', e);
+          }
+        }
+      });
+    }
+
+    // Listen for Foreground Native Alarm Manager events
+    const alarmSubscription = DeviceEventEmitter.addListener(
+      'onAlarmTriggered',
+      (alarm: any) => {
+        if (alarm && alarm.medicine) {
+          try {
+            const medObj = typeof alarm.medicine === 'string' ? JSON.parse(alarm.medicine) : alarm.medicine;
+            if (navigationRef.isReady()) {
+              const currentRoute = navigationRef.getCurrentRoute() as any;
+              if (currentRoute?.name !== 'Alarm') {
+                (navigationRef as any).navigate('Alarm', {
+                  medicine: medObj,
+                  scheduledTime: alarm.scheduledTime,
+                  notificationId: alarm.id
+                });
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse triggered alarm medicine:', e);
+          }
+        }
+      }
+    );
+
+    // Handle foreground notifications (Notifee)
+    const notifeeSubscription = notifee.onForegroundEvent(({ type, detail }) => {
       if (type === EventType.PRESS && detail.notification?.data?.type === 'alarm') {
         const data = detail.notification.data;
-        (navigationRef as any).navigate('Alarm', {
-          medicine: JSON.parse(data.medicine as string),
-          scheduledTime: data.scheduledTime,
-          notificationId: detail.notification.id
-        });
+        if (navigationRef.isReady()) {
+          const currentRoute = navigationRef.getCurrentRoute() as any;
+          if (currentRoute?.name !== 'Alarm') {
+            (navigationRef as any).navigate('Alarm', {
+              medicine: JSON.parse(data.medicine as string),
+              scheduledTime: data.scheduledTime,
+              notificationId: detail.notification.id
+            });
+          }
+        }
       }
     });
+
+    return () => {
+      alarmSubscription.remove();
+      notifeeSubscription();
+    };
   }, []);
 
   if (!isReady) return null;
@@ -115,6 +171,7 @@ export default function RootNavigator() {
         <Stack.Screen name="HistoryDetail"   component={HistoryDetailScreen}   options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="MedicineInsight" component={MedicineInsightScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Alarm"           component={AlarmScreen}           options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="StreakHistory"   component={StreakHistoryScreen}   options={{ animation: 'slide_from_right' }} />
       </Stack.Navigator>
       <FloatingVoiceButton />
     </NavigationContainer>

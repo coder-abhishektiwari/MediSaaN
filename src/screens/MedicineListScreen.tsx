@@ -1,23 +1,25 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, SafeAreaView, Alert, Image, Dimensions } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, SafeAreaView, Alert, Image } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { usePatientStore } from '../store/patientStore';
 import { getMedicines, deleteMedicine, stopMedicine } from '../db/queries/medicines';
 import { db } from '../db/schema';
-import { colors, typography, spacing, borderRadius, sizes } from '../theme';
+import { colors, typography, borderRadius } from '../theme';
 import { useReminders } from '../hooks/useReminders';
 import { useFocusEffect } from '@react-navigation/native';
 import dayjs from 'dayjs';
 
 const getMedIcon = (unit: string) => {
   const u = unit?.toLowerCase() || '';
-  if (u.includes('capsule')) return '💊';
-  if (u.includes('tablet')) return '⚪';
-  if (u.includes('drop')) return '💧';
-  if (u.includes('syrup') || u.includes('ml') || u.includes('spoon')) return '🥤';
-  if (u.includes('tube') || u.includes('cream') || u.includes('gel')) return '🧴';
-  if (u.includes('powder')) return '🧂';
-  if (u.includes('patch')) return '🩹';
-  return '💊';
+  if (u.includes('capsule')) return 'pill';
+  if (u.includes('tablet')) return 'circle-slice-8';
+  if (u.includes('drop')) return 'water-outline';
+  if (u.includes('syrup') || u.includes('ml') || u.includes('spoon')) return 'bottle-tonic-plus-outline';
+  if (u.includes('tube') || u.includes('cream') || u.includes('gel')) return 'tube';
+  if (u.includes('powder')) return 'shaker-outline';
+  if (u.includes('patch')) return 'bandage';
+  return 'pill';
 };
 
 function MedicineCard({ med, allLogs, navigation, onDelete, onStop }: any) {
@@ -63,11 +65,11 @@ function MedicineCard({ med, allLogs, navigation, onDelete, onStop }: any) {
       <TouchableOpacity activeOpacity={0.9} style={{ flex: 1 }} onPress={() => navigation.navigate('MedicineInsight', { med })}>
         <View style={card.topRow}>
           <View style={card.iconContainer}>
-            {med.image_path ? <Image source={{ uri: med.image_path }} style={card.image} /> : <View style={card.iconBox}><Text style={card.iconText}>{getMedIcon(med.dose_unit)}</Text></View>}
+            {med.image_path ? <Image source={{ uri: med.image_path }} style={card.image} /> : <LinearGradient colors={[colors.primaryLight, '#FFFFFF']} style={card.iconBox}><Icon name={getMedIcon(med.dose_unit)} size={24} color={colors.primaryDark} /></LinearGradient>}
           </View>
           <View style={card.center}>
             <Text style={card.name} numberOfLines={1}>{med.name}</Text>
-            <Text style={card.dose}>{doseStr} · <Text style={card.startDateText}>Started: {startLabel}</Text></Text>
+            <Text style={card.dose}>{doseStr}  <Text style={card.startDateText}>Started {startLabel}</Text></Text>
             <View style={card.timeRow}>
               {times.map((t, idx) => (
                 <View key={idx} style={card.timeBadge}><Text style={card.timeText}>{t}</Text></View>
@@ -78,12 +80,12 @@ function MedicineCard({ med, allLogs, navigation, onDelete, onStop }: any) {
 
         <View style={card.statsStrip}>
           <View style={styles.inlineStat}>
-            <View style={[styles.dot, { backgroundColor: colors.success }]} />
+            <Icon name="check-circle" size={14} color={colors.success} />
             <Text style={card.statTxt}>Taken: <Text style={{ fontWeight: '800', color: colors.success }}>{medStats.taken}</Text></Text>
           </View>
           <View style={card.divider} />
           <View style={styles.inlineStat}>
-            <View style={[styles.dot, { backgroundColor: colors.danger }]} />
+            <Icon name="alert-circle" size={14} color={colors.danger} />
             <Text style={card.statTxt}>Missed: <Text style={{ fontWeight: '800', color: colors.danger }}>{medStats.totalMissed}</Text></Text>
           </View>
         </View>
@@ -91,13 +93,13 @@ function MedicineCard({ med, allLogs, navigation, onDelete, onStop }: any) {
 
       <View style={card.actionColumn}>
         <TouchableOpacity style={card.editBtn} onPress={() => navigation.navigate('AddMedicine', { editMedicine: med })}>
-          <Text style={card.editIcon}>✏️</Text>
+          <Icon name="pencil-outline" size={18} color={colors.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={card.stopBtn} onPress={() => onStop(med)}>
-          <Text style={card.stopIcon}>⏹️</Text>
+          <Icon name="stop-circle-outline" size={18} color={colors.warning} />
         </TouchableOpacity>
         <TouchableOpacity style={card.deleteBtn} onPress={() => onDelete(med)}>
-          <Text style={card.deleteIcon}>🗑</Text>
+          <Icon name="trash-can-outline" size={18} color={colors.danger} />
         </TouchableOpacity>
       </View>
     </View>
@@ -105,49 +107,57 @@ function MedicineCard({ med, allLogs, navigation, onDelete, onStop }: any) {
 }
 
 const card = StyleSheet.create({
-  wrap: { backgroundColor: colors.surface, borderRadius: 16, padding: 12, marginHorizontal: 20, marginBottom: 12, borderWidth: 1, borderColor: colors.border, elevation: 2, flexDirection: 'row' },
+  wrap: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: 14,
+    marginHorizontal: 20,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    elevation: 5,
+    shadowColor: colors.cardShadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    flexDirection: 'row',
+  },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconContainer: { width: 44, height: 44, borderRadius: 10, overflow: 'hidden' },
   image: { width: '100%', height: '100%', backgroundColor: colors.background },
-  iconBox: { width: '100%', height: '100%', backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
-  iconText: { fontSize: 18 },
+  iconBox: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
   center: { flex: 1, gap: 1 },
-  name: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
+  name: { fontSize: 17, fontWeight: '900', color: colors.ink },
   dose: { fontSize: 12, color: colors.textSecondary },
   startDateText: { fontSize: 10, color: colors.textMuted, fontWeight: '500' },
   timeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
-  timeBadge: { backgroundColor: colors.primary + '12', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, borderWidth: 0.5, borderColor: colors.primary + '30' },
-  timeText: { fontSize: 11, fontWeight: '700', color: colors.primary },
+  timeBadge: { backgroundColor: colors.primaryLight, paddingHorizontal: 9, paddingVertical: 3, borderRadius: borderRadius.full, borderWidth: 1, borderColor: colors.primary + '24' },
+  timeText: { fontSize: 11, fontWeight: '800', color: colors.primaryDark },
   
-  actionColumn: { justifyContent: 'space-between', alignItems: 'center', paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.border + '40', marginLeft: 8 },
-  editBtn: { padding: 6 },
-  editIcon: { fontSize: 18 },
-  stopBtn: { padding: 6 },
-  stopIcon: { fontSize: 16, color: colors.warning + '80' },
-  deleteBtn: { padding: 6 },
-  deleteIcon: { fontSize: 16, color: colors.danger + '80' },
+  actionColumn: { justifyContent: 'space-between', alignItems: 'center', paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: colors.divider, marginLeft: 8 },
+  editBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryLight },
+  stopBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.warningLight },
+  deleteBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.dangerLight },
   
-  statsStrip: { flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border + '40' },
+  statsStrip: { flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.divider },
   statTxt: { fontSize: 11, color: colors.textSecondary, marginLeft: 6 },
   divider: { width: 1, height: 12, backgroundColor: colors.border, marginHorizontal: 12 },
 });
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
-  headerTitle: { ...typography.headingLarge, color: colors.textPrimary },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 18, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
+  headerTitle: { ...typography.headingLarge, color: colors.ink },
   headerSub: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
-  histBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1.5, borderColor: colors.primary },
-  histBtnText: { fontSize: 12, color: colors.primary, fontWeight: '700' },
+  histBtn: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: borderRadius.full, borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  histBtnText: { fontSize: 12, color: colors.primaryDark, fontWeight: '800' },
   list: { paddingTop: 12, paddingBottom: 100 },
   inlineStat: { flexDirection: 'row', alignItems: 'center' },
-  dot: { width: 6, height: 6, borderRadius: 3 },
   empty: { alignItems: 'center', paddingVertical: 80, paddingHorizontal: 40 },
-  emptyEmoji: { fontSize: 56, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+  emptyTitle: { fontSize: 18, fontWeight: '800', color: colors.ink },
   emptySub: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 8 },
-  fab: { position: 'absolute', bottom: 20, right: 20, left: 20, backgroundColor: colors.primary, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', elevation: 4 },
-  fabText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  fab: { position: 'absolute', bottom: 92, right: 20, left: 20, backgroundColor: colors.primaryDark, height: 54, borderRadius: borderRadius.lg, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: colors.cardShadow, shadowOpacity: 0.2, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } },
+  fabText: { fontSize: 15, fontWeight: '800', color: '#fff' },
 });
 
 export default function MedicineListScreen({ navigation }: any) {
@@ -192,7 +202,7 @@ export default function MedicineListScreen({ navigation }: any) {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       <View style={styles.header}>
-        <View><Text style={styles.headerTitle}>My Medicines 💊</Text><Text style={styles.headerSub}>{dayjs().format('dddd, DD MMMM')}</Text></View>
+        <View><Text style={styles.headerTitle}>My Medicines</Text><Text style={styles.headerSub}>{dayjs().format('dddd, DD MMMM')}</Text></View>
         <TouchableOpacity style={styles.histBtn} onPress={() => navigation.navigate('MedicineHistory')}><Text style={styles.histBtnText}>History</Text></TouchableOpacity>
       </View>
       <FlatList
@@ -200,7 +210,7 @@ export default function MedicineListScreen({ navigation }: any) {
         keyExtractor={item => String(item.id)}
         renderItem={({ item }) => <MedicineCard med={item} allLogs={allLogs} navigation={navigation} onDelete={handleDelete} onStop={handleStop} />}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyEmoji}>💊</Text><Text style={styles.emptyTitle}>No Medicines Added</Text><Text style={styles.emptySub}>Add your first medicine tapping the button below.</Text></View>}
+        ListEmptyComponent={<View style={styles.empty}><Icon name="pill-off" size={58} color={colors.textMuted} /><Text style={styles.emptyTitle}>No Medicines Added</Text><Text style={styles.emptySub}>Add your first medicine tapping the button below.</Text></View>}
       />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddMedicine')} activeOpacity={0.85}><Text style={styles.fabText}>+ Add Medicine</Text></TouchableOpacity>
     </SafeAreaView>
