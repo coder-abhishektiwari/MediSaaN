@@ -7,6 +7,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useTranslation } from 'react-i18next';
+import { TranslatedText } from '../components/TranslatedText';
 import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { analyzeReport } from '../api/gemini';
@@ -46,7 +47,7 @@ const STAGE_MESSAGES: Record<string, Record<LangCode, { label: string; sub: stri
     ta: { label: 'அறிக்கை படிக்கப்படுகிறது…',  sub: 'சோதனை மதிப்புகள் பகுப்பாய்வு செய்யப்படுகின்றன', voice: 'உங்கள் அறிக்கை படிக்கப்படுகிறது மற்றும் சோதனை மதிப்புகள் பகுப்பாய்வு செய்யப்படுகின்றன.' },
     te: { label: 'నివేదిక చదువుతున్నారు…',      sub: 'పరీక్ష విలువలు మరియు పారామీటర్లు విశ్లేషిస్తున్నారు', voice: 'మీ నివేదిక చదువుతున్నారు మరియు పరీక్ష విలువలు విశ్లేషిస్తున్నారు.' },
     mr: { label: 'अहवाल वाचत आहोत…',          sub: 'चाचणी मूल्ये आणि पॅरामीटर्स विश्लेषण होत आहे', voice: 'तुमचा अहवाल वाचत आहोत आणि चाचणी मूल्यांचे विश्लेषण होत आहे.' },
-    gu: { label: 'રિપોર્ટ વાંચી રહ્યા છીએ…',   sub: 'ટેસ્ટ મૂલ્યો અને પૅરાమీટર્સ વિશ્લેષણ થઈ રહ્યું છે', voice: 'રિપોર્ટ વાંચી રહ્યા છીએ आणि ટેસ્ટ મૂલ્યોનું વિશ્લેષણ થઈ રહ્યું છે.' },
+    gu: { label: 'રિપોર્ટ વાંચી રહ્યા છીએ…',   sub: 'ટેસ્ટ મૂલ્યો અને પૅરાమీટર્સ વિશ્લેષણ થઈ રહ્યું છે', voice: 'રિપોર્ટ વાંચી રહ્યા છીએ आणि ટેસ્ટ મૂલ્યોનું વિశ్లేષણ થઈ રહ્યું છે.' },
   },
 };
 
@@ -187,8 +188,8 @@ function ParameterRow({ param, t }: { param: any; t: any }) {
   return (
     <View style={pr.row}>
       <View style={pr.left}>
-        <Text style={pr.name}>{param.name}</Text>
-        <Text style={pr.meaning} numberOfLines={2}>{param.meaning}</Text>
+        <TranslatedText style={pr.name}>{param.name}</TranslatedText>
+        <TranslatedText style={pr.meaning} numberOfLines={2}>{param.meaning}</TranslatedText>
       </View>
       <View style={pr.mid}>
         <Text style={pr.value}>{param.value} {param.unit}</Text>
@@ -211,7 +212,7 @@ const pr = StyleSheet.create({
   badgeText: { ...typography.tiny, fontWeight: '800' },
 });
 
-function InfoSection({ icon, title, content }: { icon: string; title: string; content: string }) {
+const InfoSection = ({ icon, title, content }: { icon: string; title: string; content: string }) => {
   if (!content) return null;
   return (
     <View style={inf.wrap}>
@@ -219,10 +220,10 @@ function InfoSection({ icon, title, content }: { icon: string; title: string; co
         <Text style={inf.icon}>{icon}</Text>
         <Text style={inf.title}>{title}</Text>
       </View>
-      <Text style={inf.content}>{content}</Text>
+      <TranslatedText style={inf.content}>{content}</TranslatedText>
     </View>
   );
-}
+};
 const inf = StyleSheet.create({
   wrap: { backgroundColor: colors.surface, borderRadius: borderRadius.md, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -265,9 +266,9 @@ export default function ReportScanScreen({ navigation }: any) {
   const isScanningRef = useRef(false);
 
   useEffect(() => {
-    if (!isFocused || !!result) TTSService.stop();
+    if (!isFocused) TTSService.stop();
     return () => TTSService.stop();
-  }, [isFocused, !!result]);
+  }, [isFocused]);
 
   useEffect(() => {
     setIsCameraActive(!result && !askMorePages && !loading);
@@ -285,7 +286,11 @@ export default function ReportScanScreen({ navigation }: any) {
       setLoading(true);
       setProcessingStage('capturing');
       setScanStatus(t('loading'));
-      const photo = await camera.current.takePhoto({ flash: 'off', enableShutterSound: true });
+      
+      // Allow UI render and TTS to speak "Capturing the report" before blocking UI
+      await new Promise(r => setTimeout(r, 800));
+
+      const photo = await camera.current.takePhoto({ flash: 'off', enableShutterSound: false });
       const uri = 'file://' + photo.path;
       setImages(prev => [...prev, uri]);
       setLoading(false);
@@ -355,7 +360,7 @@ export default function ReportScanScreen({ navigation }: any) {
       setResult(data);
       setFrameState('candidate');
       setScanStatus(t('status_normal'));
-      TTSService.speak(data.simple_verdict);
+      // The TTS will play when the user hits the Speak button with correct translation.
       if (patient.id) {
         const id = saveScanResult(patient.id, 'report', permUris[0], JSON.stringify(data), data.severity || 'normal', false);
         setCurrentScanId(id ?? null);
@@ -494,7 +499,7 @@ export default function ReportScanScreen({ navigation }: any) {
                 <Text style={[styles.sevTitle, { color: sevColor }]}>
                   {result.severity?.replace('_', ' ').toUpperCase()}
                 </Text>
-                <Text style={styles.verdict}>{result.simple_verdict}</Text>
+                <TranslatedText style={styles.verdict}>{result.simple_verdict}</TranslatedText>
               </View>
             </View>
             <View style={styles.simpleActions}>
@@ -527,7 +532,7 @@ export default function ReportScanScreen({ navigation }: any) {
             <ScrollView contentContainerStyle={styles.detailedScroll} showsVerticalScrollIndicator={false}>
               <View style={[styles.verdictBanner, { backgroundColor: sevColor }]}>
                 <Text style={styles.verdictIcon}>{sevIcon}</Text>
-                <Text style={styles.verdictText}>{result.simple_verdict}</Text>
+                <TranslatedText style={styles.verdictText}>{result.simple_verdict}</TranslatedText>
               </View>
               {result.parameters?.length > 0 && (
                 <View style={styles.section}>
@@ -549,7 +554,7 @@ export default function ReportScanScreen({ navigation }: any) {
                 {result.urgent_action && (
                   <View style={styles.urgentBox}>
                     <Text style={styles.urgentTitle}>🚨 Urgent Action Required</Text>
-                    <Text style={styles.urgentText}>{result.urgent_action}</Text>
+                    <TranslatedText style={styles.urgentText}>{result.urgent_action}</TranslatedText>
                   </View>
                 )}
               </View>

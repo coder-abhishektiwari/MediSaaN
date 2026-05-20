@@ -26,12 +26,18 @@ const QUICK_PROMPTS = [
   { id: 'diet', labelKey: 'chat_quick_prompt_diet_label', textKey: 'chat_quick_prompt_diet_text' },
 ];
 
+import { useTranslateAIResponse } from '../hooks/useTranslateAIResponse';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; time: string };
 
 // ─── Bubble ───────────────────────────────────────────────────────────────────
 function Bubble({ msg, onSpeak }: { msg: ChatMessage; onSpeak: (t: string) => void }) {
   const isBot = msg.role === 'assistant';
+  // Only translate bot messages since user messages are already in the native language from STT/Keyboard
+  const botTranslatedText = useTranslateAIResponse(isBot ? msg.content || '' : '');
+  const displayText = isBot ? (botTranslatedText || msg.content) : msg.content;
+
   return (
     <View style={[bub.row, isBot ? bub.rowBot : bub.rowUser]}>
       {isBot && (
@@ -40,11 +46,11 @@ function Bubble({ msg, onSpeak }: { msg: ChatMessage; onSpeak: (t: string) => vo
         </View>
       )}
       <View style={[bub.bubble, isBot ? bub.bubbleBot : bub.bubbleUser]}>
-        <Text style={[bub.text, isBot ? bub.textBot : bub.textUser]}>{msg.content}</Text>
+        <Text style={[bub.text, isBot ? bub.textBot : bub.textUser]}>{displayText}</Text>
         <View style={bub.footer}>
           <Text style={bub.time}>{msg.time}</Text>
           {isBot && (
-            <TouchableOpacity onPress={() => onSpeak(msg.content)} style={bub.speakBtn}>
+            <TouchableOpacity onPress={() => onSpeak(displayText)} style={bub.speakBtn}>
               <Icon name="volume-high" size={15} color={colors.primary} />
             </TouchableOpacity>
           )}
@@ -321,11 +327,10 @@ function VoiceModal({ visible, onClose, onSend, language: _language, locale, pat
 
         {/* Top bar */}
         <View style={vm.topBar}>
+          <Text style={vm.topTitle}>{t('medisaan_voice', { defaultValue: 'MediSaaN Voice' })}</Text>
           <TouchableOpacity style={vm.closeBtn} onPress={onClose}>
-          <Icon name="close" size={22} color="#fff" />
+            <Icon name="close" size={22} color="#fff" />
           </TouchableOpacity>
-          <Text style={vm.topTitle}>MediSaaN Voice</Text>
-          <View style={{ width: 40 }} />
         </View>
 
         {/* Patient chip */}
@@ -605,7 +610,7 @@ export default function ChatScreen({ navigation }: any) {
         <View style={styles.botInfo}>
           <View style={styles.botAvatar}><Icon name="robot-happy-outline" size={23} color="#fff" /></View>
           <View>
-            <Text style={styles.botName}>MediSaaN Bot</Text>
+            <Text style={styles.botName}>{t('medisaan_bot', { defaultValue: 'MediSaaN Bot' })}</Text>
             <Text style={styles.botStatus}>{lc.botStatus}</Text>
           </View>
         </View>
@@ -617,7 +622,7 @@ export default function ChatScreen({ navigation }: any) {
             setVoiceModeActive(true);
           }}
         >
-          <Text style={styles.voiceModeBtnText}>Voice</Text>
+          <Text style={styles.voiceModeBtnText}>{t('voice', { defaultValue: 'Voice' })}</Text>
         </TouchableOpacity>
       </View>
 
@@ -673,7 +678,7 @@ export default function ChatScreen({ navigation }: any) {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder={isListening ? lc.listeningText : lc.typePlaceholder}
+            placeholder={isListening ? lc.listeningText : t('enter_message', { defaultValue: 'Enter message...' })}
             placeholderTextColor={isListening ? colors.primary : colors.textMuted}
             multiline
             returnKeyType="send"

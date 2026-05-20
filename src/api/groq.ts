@@ -25,8 +25,7 @@ export async function chatWithBot(
   isVoiceMode: boolean = false
 ): Promise<string> {
   const systemPrompt = `You are MediSaaN, a caring health assistant for Indian patients.
-Speak ONLY in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). EVERY word and sentence MUST be in ${patientContext.nativeLanguageName}. NEVER switch languages or use English.
-Use the native script for this language only. Do not use Latin letters, transliteration, or Romanized words.
+Speak ONLY in simple English. EVERY word and sentence MUST be in English. NEVER switch languages.
 Use very simple, warm words — like a caring family member.
 Keep every response to 2-3 short sentences maximum. Never be verbose.
 Always be reassuring and kind.
@@ -57,7 +56,7 @@ Patient you are talking with:
 If you need information not provided above, ask politely.`;
 
   const finalSystemPrompt = isVoiceMode 
-    ? systemPrompt + `\nIMPORTANT: You are communicating via VOICE. Keep your reply extremely concise, conversational, professional, and easy to hear. Do not use markdown, emojis, or lists. Remember to ALWAYS respond in ${patientContext.nativeLanguageName} using the native script only.`
+    ? systemPrompt + `\nIMPORTANT: You are communicating via VOICE. Keep your reply extremely concise, conversational, professional, and easy to hear. Do not use markdown, emojis, or lists. Remember to ALWAYS respond in English.`
     : systemPrompt;
 
   try {

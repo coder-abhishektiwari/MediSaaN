@@ -7,6 +7,9 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 
@@ -32,8 +35,22 @@ public class AlarmReceiver extends BroadcastReceiver {
                 NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("Critical Medicine Alarms Channel");
+            
+            // Set sound explicitly for high-priority full-screen intent trigger
+            Uri defaultAlarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            if (defaultAlarmUri == null) {
+                defaultAlarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            }
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+            channel.setSound(defaultAlarmUri, audioAttributes);
+            
             channel.enableVibration(true);
+            channel.setVibrationPattern(new long[]{0, 500, 250, 500});
             channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            
             NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
@@ -49,6 +66,13 @@ public class AlarmReceiver extends BroadcastReceiver {
         activityIntent.putExtra("body", body);
         activityIntent.putExtra("medicine", medicine);
         activityIntent.putExtra("scheduledTime", scheduledTime);
+
+        // Attempt to launch activity to foreground automatically
+        try {
+            context.startActivity(activityIntent);
+        } catch (Exception e) {
+            Log.e("MediSaaN", "Failed to start MainActivity automatically from background: " + e.getMessage());
+        }
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -84,6 +108,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             .setFullScreenIntent(fullScreenPendingIntent, true)
             .setAutoCancel(true)
             .setOngoing(true)
+            .setVibrate(new long[]{0, 500, 250, 500})
             .setVisibility(Notification.VISIBILITY_PUBLIC);
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

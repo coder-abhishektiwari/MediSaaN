@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, SectionList, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { usePatientStore } from '../store/patientStore';
 import { db } from '../db/schema';
 import { colors, spacing, borderRadius, typography } from '../theme';
@@ -8,6 +9,7 @@ import dayjs from 'dayjs';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function MedicineHistoryScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { patient } = usePatientStore();
   const [logs, setLogs] = useState<any[]>([]);
   const [medicines, setMedicines] = useState<any[]>([]);
@@ -115,8 +117,8 @@ export default function MedicineHistoryScreen({ navigation }: any) {
       const date = dayjs().subtract(i, 'day');
       const { dateLogs } = getDayCompliance(date);
       if (dateLogs.length === 0) continue;
-      const label = date.isSame(dayjs(), 'day') ? 'Today' :
-                    date.isSame(dayjs().subtract(1, 'day'), 'day') ? 'Yesterday' : date.format('DD MMMM YYYY');
+      const label = date.isSame(dayjs(), 'day') ? t('today', { defaultValue: 'Today' }) :
+                    date.isSame(dayjs().subtract(1, 'day'), 'day') ? t('yesterday', { defaultValue: 'Yesterday' }) : date.format('DD MMMM YYYY');
       groups[label] = dateLogs.sort((a, b) => dayjs(b.action_time).diff(dayjs(a.action_time)));
     }
     return Object.entries(groups).map(([title, data]) => ({ title, data }));
@@ -134,10 +136,10 @@ export default function MedicineHistoryScreen({ navigation }: any) {
       totalSkipped += skippedDoses;
     }
     const score = totalScheduled > 0 ? (totalTaken / totalScheduled) * 100 : 0;
-    let feedback = { title: 'Healthy Recovery!', body: 'Keep following the schedule for best results!', color: colors.success, emoji: '🛡️' };
-    if (totalScheduled === 0) feedback = { title: 'Welcome!', body: 'Add medicines to start tracking your health.', color: colors.primary, emoji: '👋' };
-    else if (score < 40) feedback = { title: 'Urgent Action', body: 'Many doses are being missed. Consistency is critical for recovery.', color: colors.danger, emoji: '🚨' };
-    else if (score < 80) feedback = { title: 'Almost Perfect', body: 'Try not to miss any more doses. You are doing well!', color: colors.warning, emoji: '📈' };
+    let feedback = { title: t('healthy_recovery', { defaultValue: 'Healthy Recovery!' }), body: t('keep_following_schedule', { defaultValue: 'Keep following the schedule for best results!' }), color: colors.success, emoji: '🛡️' };
+    if (totalScheduled === 0) feedback = { title: t('welcome', { defaultValue: 'Welcome!' }), body: t('add_medicines_to_track', { defaultValue: 'Add medicines to start tracking your health.' }), color: colors.primary, emoji: '👋' };
+    else if (score < 40) feedback = { title: t('urgent_action', { defaultValue: 'Urgent Action' }), body: t('many_doses_missed', { defaultValue: 'Many doses are being missed. Consistency is critical for recovery.' }), color: colors.danger, emoji: '🚨' };
+    else if (score < 80) feedback = { title: t('almost_perfect', { defaultValue: 'Almost Perfect' }), body: t('try_not_to_miss', { defaultValue: 'Try not to miss any more doses. You are doing well!' }), color: colors.warning, emoji: '📈' };
     return { score, totalTaken, totalSkipped, totalScheduled, feedback };
   }, [logs, medicines]);
 
@@ -166,7 +168,7 @@ export default function MedicineHistoryScreen({ navigation }: any) {
     const isTaken = item.action === 'taken';
     const isSkipped = item.action === 'skipped';
     const color = isTaken ? colors.success : (isSkipped ? colors.danger : '#9CA3AF');
-    const statusText = isTaken ? 'Taken' : (isSkipped ? 'Skipped' : 'Missed');
+    const statusText = isTaken ? t('taken', { defaultValue: 'Taken' }) : (isSkipped ? t('skipped', { defaultValue: 'Skipped' }) : t('missed', { defaultValue: 'Missed' }));
     const icon = isTaken ? '✅' : (isSkipped ? '❌' : '⚠️');
     return (
       <View style={styles.logCard}>
@@ -177,9 +179,9 @@ export default function MedicineHistoryScreen({ navigation }: any) {
             <Text style={styles.logTime}>{item.scheduled_time}</Text>
           </View>
           <Text style={styles.logDetails} numberOfLines={1}>
-            {isTaken ? `Taken at ${dayjs(item.action_time).format('hh:mm A')}` : 
-             isSkipped ? `Skipped at ${dayjs(item.action_time).format('hh:mm A')}` : 
-             `Missed (Window Closed)`}
+            {isTaken ? `${t('taken_at', { defaultValue: 'Taken at' })} ${dayjs(item.action_time).format('hh:mm A')}` : 
+             isSkipped ? `${t('skipped_at', { defaultValue: 'Skipped at' })} ${dayjs(item.action_time).format('hh:mm A')}` : 
+             t('missed_window_closed', { defaultValue: 'Missed (Window Closed)' })}
           </Text>
         </View>
         <View style={[styles.badge, { backgroundColor: color + '10', borderColor: color }]}>
@@ -225,11 +227,11 @@ export default function MedicineHistoryScreen({ navigation }: any) {
         </View>
       )}
       <View style={styles.statsStrip}>
-        <View style={styles.statItem}><Text style={styles.statNum}>{stats?.totalTaken}/{stats?.totalScheduled}</Text><Text style={styles.statLab}>Taken</Text></View>
-        <View style={[styles.statItem, { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border }]}><Text style={styles.statNum}>{stats?.totalSkipped}</Text><Text style={styles.statLab}>Skipped</Text></View>
-        <View style={styles.statItem}><Text style={styles.statNum}>{stats?.score.toFixed(0)}%</Text><Text style={styles.statLab}>Score</Text></View>
+        <View style={styles.statItem}><Text style={styles.statNum}>{stats?.totalTaken}/{stats?.totalScheduled}</Text><Text style={styles.statLab}>{t('taken', { defaultValue: 'Taken' })}</Text></View>
+        <View style={[styles.statItem, { borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border }]}><Text style={styles.statNum}>{stats?.totalSkipped}</Text><Text style={styles.statLab}>{t('skipped', { defaultValue: 'Skipped' })}</Text></View>
+        <View style={styles.statItem}><Text style={styles.statNum}>{stats?.score.toFixed(0)}%</Text><Text style={styles.statLab}>{t('score', { defaultValue: 'Score' })}</Text></View>
       </View>
-      <View style={styles.listHeaderDivider}><Text style={styles.sectionTitle}>Full Timeline</Text></View>
+      <View style={styles.listHeaderDivider}><Text style={styles.sectionTitle}>{t('full_timeline', { defaultValue: 'Full Timeline' })}</Text></View>
     </View>
   );
 
@@ -237,8 +239,8 @@ export default function MedicineHistoryScreen({ navigation }: any) {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><Text style={styles.backText}>← Back</Text></TouchableOpacity>
-        <Text style={styles.headerTitle}>Health Insights</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><Text style={styles.backText}>← {t('back', { defaultValue: 'Back' })}</Text></TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('medicine_history', { defaultValue: 'Health Insights' })}</Text>
         <View style={{ width: 60 }} />
       </View>
       <SectionList
@@ -254,8 +256,8 @@ export default function MedicineHistoryScreen({ navigation }: any) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>📅</Text>
-            <Text style={styles.emptyTitle}>No Data</Text>
-            <Text style={styles.emptySub}>Logs will appear here once you start taking medicines.</Text>
+            <Text style={styles.emptyTitle}>{t('no_data', { defaultValue: 'No Data' })}</Text>
+            <Text style={styles.emptySub}>{t('logs_will_appear', { defaultValue: 'Logs will appear here once you start taking medicines.' })}</Text>
           </View>
         }
       />

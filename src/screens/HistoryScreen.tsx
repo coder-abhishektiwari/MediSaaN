@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { usePatientStore } from '../store/patientStore';
 import { getScanHistory } from '../db/queries/reports';
+import { useTranslation } from 'react-i18next';
 import { getMedicines } from '../db/queries/medicines';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,6 +22,7 @@ interface ScanHistoryItem {
 }
 
 export default function HistoryScreen({ route, navigation }: any) {
+  const { t } = useTranslation();
   const { type } = route.params; // 'medicine' or 'report'
   const { patient } = usePatientStore();
   const [history, setHistory] = useState<ScanHistoryItem[]>([]);
@@ -100,10 +102,10 @@ export default function HistoryScreen({ route, navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={styles.backText}>← {t('back', { defaultValue: 'Back' })}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{type === 'medicine' ? 'Medicine History' : 'Report History'}</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>{type === 'medicine' ? t('medicine_scans', { defaultValue: 'Medicine Scans' }) : t('report_scans', { defaultValue: 'Report Scans' })}</Text>
+        <View style={{ width: 60 }} />
       </View>
 
       {loading ? (
@@ -113,9 +115,9 @@ export default function HistoryScreen({ route, navigation }: any) {
       ) : history.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>{type === 'medicine' ? '💊' : '📄'}</Text>
-          <Text style={styles.emptyText}>No {type} scans found</Text>
+          <Text style={styles.emptyText}>{t('no_scans_found', { defaultValue: `No ${type} scans found` })}</Text>
           <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate(type === 'medicine' ? 'QuickScan' : 'ReportScan')}>
-            <Text style={styles.scanBtnText}>Start Scanning</Text>
+            <Text style={styles.scanBtnText}>{t('start_scanning', { defaultValue: 'Start Scanning' })}</Text>
           </TouchableOpacity>
         </View>
       ) : (

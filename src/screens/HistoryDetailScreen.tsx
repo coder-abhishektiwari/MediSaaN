@@ -10,24 +10,27 @@ import { TTSService } from '../services/TTSService';
 import { markScanAsSaved } from '../db/queries/reports';
 import { usePatientStore } from '../store/patientStore';
 import { addMedicine, getMedicines, deleteMedicineByName } from '../db/queries/medicines';
+import { useTranslation } from 'react-i18next';
+import { TranslatedText } from '../components/TranslatedText';
+import { useTranslateAIResponse } from '../hooks/useTranslateAIResponse';
 
-const TABS = ['Uses', 'Dosage', 'Side Effects', 'Warnings', 'Interactions'];
+const TABS = ['uses', 'dosage', 'side_effects', 'warnings', 'interactions'];
 
-const HOW_TO_LABEL = (val: string) => {
-  if (val === 'before_food') return '🍽 Before Food';
-  if (val === 'after_food') return '🍽 After Food';
-  if (val === 'with_food') return '🍽 With Food';
-  return '🕒 Anytime';
+const HOW_TO_LABEL = (val: string, t: any) => {
+  if (val === 'before_food') return `🍽 ${t('before_food', { defaultValue: 'Before Food' })}`;
+  if (val === 'after_food') return `🍽 ${t('after_food', { defaultValue: 'After Food' })}`;
+  if (val === 'with_food') return `🍽 ${t('with_food', { defaultValue: 'With Food' })}`;
+  return `🕒 ${t('anytime', { defaultValue: 'Anytime' })}`;
 };
 
-const ParameterRow = ({ param }: { param: any }) => {
+const ParameterRow = ({ param, t }: { param: any, t: any }) => {
   const isNormal = param.status === 'normal';
   const color = isNormal ? colors.success : colors.danger;
   return (
     <View style={styles.paramRow}>
       <View style={{ flex: 2 }}>
-        <Text style={styles.paramName}>{param.name}</Text>
-        <Text style={styles.paramMeaning}>{param.meaning}</Text>
+        <TranslatedText style={styles.paramName}>{param.name}</TranslatedText>
+        <TranslatedText style={styles.paramMeaning}>{param.meaning}</TranslatedText>
       </View>
       <View style={{ flex: 1.5, alignItems: 'center' }}>
         <Text style={[styles.paramValue, { color }]}>{param.value} {param.unit}</Text>
@@ -50,12 +53,13 @@ const InfoSection = ({ icon, title, content }: any) => {
         <Text style={styles.infoIcon}>{icon}</Text>
         <Text style={styles.infoTitle}>{title}</Text>
       </View>
-      <Text style={styles.infoBody}>{content}</Text>
+      <TranslatedText style={styles.infoBody}>{content}</TranslatedText>
     </View>
   );
 };
 
 export default function HistoryDetailScreen({ route, navigation }: any) {
+  const { t } = useTranslation();
   const { item } = route.params;
   const { patient } = usePatientStore();
   const [isSaved, setIsSaved] = useState(item.is_saved === 1);
@@ -69,6 +73,7 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
   } catch {}
 
   const isMedicine = item.type === 'medicine';
+  const translatedDesc = useTranslateAIResponse(isMedicine ? data.simple_description || '' : data.simple_verdict || '');
 
   React.useEffect(() => {
     if (isMedicine && patient?.id && data.medicine_name) {
@@ -102,14 +107,14 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
       scan_cache_json: JSON.stringify(data),
     });
     setIsAlreadyInSchedule(true);
-    Alert.alert('✅ Added', `${data.medicine_name} has been added to your medicine list.`);
+    Alert.alert(`✅ ${t('added', { defaultValue: 'Added' })}`, `${data.medicine_name} ${t('added_to_meds', { defaultValue: 'has been added to your medicine list.' })}`);
   };
 
   const handleRemoveMedicine = () => {
     if (!patient?.id) return;
     deleteMedicineByName(patient.id, data.medicine_name);
     setIsAlreadyInSchedule(false);
-    Alert.alert('✅ Removed', `${data.medicine_name} has been removed from your medicine list.`);
+    Alert.alert(`✅ ${t('removed', { defaultValue: 'Removed' })}`, `${data.medicine_name} ${t('removed_from_meds', { defaultValue: 'has been removed from your medicine list.' })}`);
   };
 
   return (
@@ -118,10 +123,10 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
       
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>← {t('back', { defaultValue: 'Back' })}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isMedicine ? data.medicine_name : 'Report Analysis'}</Text>
-        <TouchableOpacity onPress={() => TTSService.speak(isMedicine ? data.simple_description : data.simple_verdict)}>
+        <Text style={styles.headerTitle}>{isMedicine ? data.medicine_name : t('report_analysis', { defaultValue: 'Report Analysis' })}</Text>
+        <TouchableOpacity onPress={() => TTSService.speak(translatedDesc)}>
           <Text style={{ fontSize: 24 }}>🔊</Text>
         </TouchableOpacity>
       </View>
@@ -133,7 +138,7 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
             <Text style={styles.dateText}>{date}</Text>
           </View>
           <View style={styles.zoomTip}>
-            <Text style={styles.zoomTipText}>🔍 Tap to Zoom</Text>
+            <Text style={styles.zoomTipText}>🔍 {t('tap_to_zoom', { defaultValue: 'Tap to Zoom' })}</Text>
           </View>
         </TouchableOpacity>
 
@@ -147,7 +152,7 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
               </View>
               {data.how_to_take ? (
                 <View style={styles.howBadge}>
-                  <Text style={styles.howBadgeText}>{HOW_TO_LABEL(data.how_to_take)}</Text>
+                  <Text style={styles.howBadgeText}>{HOW_TO_LABEL(data.how_to_take, t)}</Text>
                 </View>
               ) : null}
             </View>
@@ -156,35 +161,41 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {TABS.map((tab, i) => (
                   <TouchableOpacity key={tab} style={[styles.tab, activeTab === i && styles.tabActive]} onPress={() => setActiveTab(i)}>
-                    <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>{tab}</Text>
+                    <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>{t(tab, { defaultValue: tab.replace('_', ' ') })}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
 
             <View style={styles.tabContent}>
-              <Text style={styles.tabBody}>
-                {activeTab === 0 ? data.uses :
-                 activeTab === 1 ? data.dosage_instructions :
-                 activeTab === 2 ? data.side_effects :
-                 activeTab === 3 ? data.warnings :
-                 data.how_to_take ? HOW_TO_LABEL(data.how_to_take) + '\n\n' + (data.drug_interactions || '') : ''}
-              </Text>
+              {activeTab === 4 ? (
+                <>
+                  {data.how_to_take ? <Text style={styles.tabBody}>{HOW_TO_LABEL(data.how_to_take, t)}{'\n\n'}</Text> : null}
+                  <TranslatedText style={styles.tabBody}>{data.drug_interactions || ''}</TranslatedText>
+                </>
+              ) : (
+                <TranslatedText style={styles.tabBody}>
+                  {activeTab === 0 ? data.uses :
+                   activeTab === 1 ? data.dosage_instructions :
+                   activeTab === 2 ? data.side_effects :
+                   data.warnings}
+                </TranslatedText>
+              )}
               {data.drug_interactions && activeTab === 4 && (
                 <View style={styles.interactionBox}>
-                  <Text style={styles.interactionTitle}>⚠️ Drug Interactions</Text>
-                  <Text style={styles.interactionText}>{data.drug_interactions}</Text>
+                  <Text style={styles.interactionTitle}>⚠️ {t('drug_interactions', { defaultValue: 'Drug Interactions' })}</Text>
+                  <TranslatedText style={styles.interactionText}>{data.drug_interactions}</TranslatedText>
                 </View>
               )}
             </View>
 
             {!isAlreadyInSchedule ? (
               <TouchableOpacity style={styles.actionBtn} onPress={handleAddMedicine}>
-                <Text style={styles.actionBtnText}>+ Add to My Medicines</Text>
+                <Text style={styles.actionBtnText}>+ {t('add_to_my_meds', { defaultValue: 'Add to My Medicines' })}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={[styles.actionBtn, styles.removeBtn]} onPress={handleRemoveMedicine}>
-                <Text style={styles.removeBtnText}>✕ Remove from My Medicines</Text>
+                <Text style={styles.removeBtnText}>✕ {t('remove_from_my_meds', { defaultValue: 'Remove from My Medicines' })}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -192,31 +203,31 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
           <View style={styles.reportContent}>
             <View style={[styles.verdictBanner, { backgroundColor: sevColor }]}>
               <Text style={styles.verdictIcon}>{item.severity === 'urgent' ? '🚨' : item.severity === 'needs_attention' ? '⚠️' : '✅'}</Text>
-              <Text style={styles.verdictText}>{data.simple_verdict}</Text>
+              <TranslatedText style={styles.verdictText}>{data.simple_verdict}</TranslatedText>
             </View>
 
             {data.parameters?.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>📊 Test Parameters</Text>
+                <Text style={styles.sectionTitle}>📊 {t('test_parameters', { defaultValue: 'Test Parameters' })}</Text>
                 <View style={styles.tableHeader}>
-                  <Text style={[styles.thCell, { flex: 2 }]}>Parameter</Text>
-                  <Text style={[styles.thCell, { flex: 1.5, textAlign: 'center' }]}>Your Value</Text>
-                  <Text style={[styles.thCell, { flex: 1, textAlign: 'right' }]}>Status</Text>
+                  <Text style={[styles.thCell, { flex: 2 }]}>{t('parameter', { defaultValue: 'Parameter' })}</Text>
+                  <Text style={[styles.thCell, { flex: 1.5, textAlign: 'center' }]}>{t('your_value', { defaultValue: 'Your Value' })}</Text>
+                  <Text style={[styles.thCell, { flex: 1, textAlign: 'right' }]}>{t('status', { defaultValue: 'Status' })}</Text>
                 </View>
-                {data.parameters.map((p: any, i: number) => <ParameterRow key={i} param={p} />)}
+                {data.parameters.map((p: any, i: number) => <ParameterRow key={i} param={p} t={t} />)}
               </View>
             )}
 
             <View style={styles.infoSections}>
-              <InfoSection icon="🔍" title="Findings"        content={data.possible_conditions} />
-              <InfoSection icon="🥗" title="Diet Advice"     content={data.diet_advice} />
-              <InfoSection icon="🏃" title="Lifestyle"       content={data.lifestyle_advice} />
-              <InfoSection icon="👨‍⚕️" title="Consult Doctor" content={data.specialist_to_see} />
-              <InfoSection icon="🗓" title="Next Test When"  content={data.follow_up_when} />
+              <InfoSection icon="🔍" title={t('findings', { defaultValue: 'Findings' })}        content={data.possible_conditions} />
+              <InfoSection icon="🥗" title={t('diet_advice', { defaultValue: 'Diet Advice' })}     content={data.diet_advice} />
+              <InfoSection icon="🏃" title={t('lifestyle', { defaultValue: 'Lifestyle' })}       content={data.lifestyle_advice} />
+              <InfoSection icon="👨‍⚕️" title={t('consult_doctor', { defaultValue: 'Consult Doctor' })} content={data.specialist_to_see} />
+              <InfoSection icon="🗓" title={t('next_test_when', { defaultValue: 'Next Test When' })}  content={data.follow_up_when} />
               {data.urgent_action && (
                 <View style={styles.urgentBox}>
-                  <Text style={styles.urgentTitle}>🚨 Urgent Action Required</Text>
-                  <Text style={styles.urgentText}>{data.urgent_action}</Text>
+                  <Text style={styles.urgentTitle}>🚨 {t('urgent_action', { defaultValue: 'Urgent Action Required' })}</Text>
+                  <TranslatedText style={styles.urgentText}>{data.urgent_action}</TranslatedText>
                 </View>
               )}
             </View>
@@ -226,7 +237,7 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
               onPress={toggleSaveReport}
             >
               <Text style={[styles.actionBtnText, isSaved && { color: colors.success }]}>
-                {isSaved ? '✓ Saved to Profile' : '➕ Add to My Record'}
+                {isSaved ? `✓ ${t('saved_to_profile', { defaultValue: 'Saved to Profile' })}` : `➕ ${t('add_to_my_record', { defaultValue: 'Add to My Record' })}`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -236,7 +247,7 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
 
       {/* Full Screen Image Viewer */}
       <Modal visible={isZoomVisible} transparent animationType="fade" onRequestClose={() => setIsZoomVisible(false)}>
-        <ZoomViewer uri={item.image_path} onClose={() => setIsZoomVisible(false)} />
+        <ZoomViewer uri={item.image_path} onClose={() => setIsZoomVisible(false)} t={t} />
       </Modal>
     </SafeAreaView>
   );
@@ -244,13 +255,13 @@ export default function HistoryDetailScreen({ route, navigation }: any) {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-function ZoomViewer({ uri, onClose }: { uri: string, onClose: () => void }) {
+function ZoomViewer({ uri, onClose, t }: { uri: string, onClose: () => void, t: any }) {
   return (
     <View style={styles.zoomContainer}>
       <SafeAreaView style={styles.zoomHeader}>
         <TouchableOpacity onPress={onClose} style={styles.zoomClose}>
           <Icon name="close" size={22} color="#fff" />
-          <Text style={styles.zoomCloseText}>Close</Text>
+          <Text style={styles.zoomCloseText}>{t('close', { defaultValue: 'Close' })}</Text>
         </TouchableOpacity>
       </SafeAreaView>
       

@@ -17,7 +17,7 @@ export class NotificationService {
   static async createChannel() {
     await notifee.createChannel({
       id: 'medisaan_alarms',
-      name: 'Critical Medicine Alarms',
+      name: 'Medicine Reminders',
       sound: 'default', 
       importance: AndroidImportance.HIGH,
       visibility: AndroidVisibility.PUBLIC,
@@ -104,8 +104,8 @@ export class NotificationService {
     }
 
     const notifId = `med_${medicine.id}_${timeStr.replace(':', '')}`;
-    const title = `💊 MEDICINE ALARM: ${medicine.name}`;
-    const body = `URGENT: Time to take your ${medicine.dose_amount} ${medicine.dose_unit}`;
+    const title = `💊 Medicine Reminder: ${medicine.name}`;
+    const body = `Time to take your ${medicine.dose_amount} ${medicine.dose_unit}`;
 
     const { MediSaaNNativeModule } = require('react-native').NativeModules;
     
@@ -146,7 +146,7 @@ export class NotificationService {
             category: AndroidCategory.ALARM,
             ongoing: true,
             autoCancel: false,
-            color: '#EF4444',
+            color: '#155E75',
             visibility: AndroidVisibility.PUBLIC,
             fullScreenAction: { id: 'default', mainComponent: 'MediSaaN' },
             pressAction: { id: 'default' },

@@ -83,19 +83,19 @@ If it is not a medicine-related image, do not guess a medicine name.
 Patient context: ${patientContext.age} year old ${patientContext.gender}, diagnosed with: ${(patientContext.conditions || []).join(', ')}.
 Currently taking: ${(patientContext.medicines || []).join(', ')}.
 
-IMPORTANT: Respond in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). ALL text fields MUST be in ${patientContext.nativeLanguageName}. NEVER use any other language. Use the native script only; do not use Latin letters, transliteration, or English.
+IMPORTANT: Respond ONLY in English. ALL text fields MUST be in English. NEVER use any other language.
 
 Respond ONLY in valid JSON (no markdown):
 {
   "is_medicine": true,
   "not_medicine_message": null,
-  "medicine_name": "exact medicine name",
-  "generic_name": "generic/salt name",
-  "simple_description": "ONE sentence in ${patientContext.nativeLanguageName} — what this medicine is for",
-  "uses": "uses in ${patientContext.nativeLanguageName}",
+  "medicine_name": "Exact Name from packaging (Use Sentence case)",
+  "generic_name": "Generic/Salt name (if visible)",
+  "simple_description": "ONE sentence in simple English — what this medicine is for",
+  "uses": "uses in simple English",
   "dosage_instructions": "typical dosage",
-  "side_effects": "common side effects in simple words in ${patientContext.nativeLanguageName}",
-  "warnings": "important warnings in ${patientContext.nativeLanguageName}",
+  "side_effects": "common side effects in simple English",
+  "warnings": "important warnings in simple English",
   "how_to_take": "before_food or after_food or with_food or anytime",
   "drug_interactions": "any interactions with the patient's current medicines, or null",
   "identified_confidence": "high or medium or low",
@@ -148,21 +148,21 @@ If it is not a medical report, do not guess report values.
 Patient: ${patientContext.name}, ${patientContext.age} years old, ${patientContext.gender}, city: ${patientContext.city}.
 Known conditions: ${(patientContext.conditions || []).join(', ')}. Allergies: ${patientContext.allergies}.
 
-IMPORTANT: Respond in ${patientContext.nativeLanguageName} (language code: ${patientContext.language}). ALL text fields MUST be in ${patientContext.nativeLanguageName}. NEVER use any other language. Use the native script only; do not use Latin letters, transliteration, or English.
+IMPORTANT: Respond ONLY in English. ALL text fields MUST be in English. NEVER use any other language.
 
 Respond ONLY in valid JSON:
 {
   "is_report": true,
   "not_report_message": null,
-  "simple_verdict": "ONE sentence in ${patientContext.nativeLanguageName} — is everything normal or what needs attention",
+  "simple_verdict": "ONE sentence in simple English — is everything normal or what needs attention",
   "severity": "normal or mild_concern or needs_attention or urgent",
   "parameters": [
-    { "name": "...", "value": "...", "unit": "...", "normal_range": "...", "status": "normal or high or low or critical", "meaning": "simple meaning in ${patientContext.nativeLanguageName}" }
+    { "name": "...", "value": "...", "unit": "...", "normal_range": "...", "status": "normal or high or low or critical", "meaning": "simple meaning in simple English" }
   ],
   "report_type": "blood_test or urine or xray or ecg or other",
-  "possible_conditions": "simple explanation in ${patientContext.nativeLanguageName}",
-  "diet_advice": "diet recommendations in ${patientContext.nativeLanguageName}",
-  "lifestyle_advice": "lifestyle changes in ${patientContext.nativeLanguageName}",
+  "possible_conditions": "simple explanation in simple English",
+  "diet_advice": "diet recommendations in simple English",
+  "lifestyle_advice": "lifestyle changes in simple English",
   "specialist_to_see": "which specialist",
   "follow_up_when": "when to retest",
   "urgent_action": "only if severity is urgent, else null"
@@ -324,20 +324,20 @@ ABOUT FOLLOW-UP:
 - Instead give practical advice like "har 3 mahine mein apne doctor ko dikha dena" or "agar XYZ ho to doctor ke paas chale jaana"
 - If they have regular conditions (diabetes, BP), remind them when their next real doctor visit or test should be.
 
-IMPORTANT: Respond ONLY in ${ctx.nativeLanguageName} (language code: ${ctx.language}). ALL text MUST be in ${ctx.nativeLanguageName} using native script only. NO English, NO transliteration, NO Latin letters.
+IMPORTANT: Respond ONLY in English. ALL text MUST be in English.
 
 Respond ONLY in valid JSON:
 {
   "overall_status": "good | attention_needed | concerning",
-  "greeting": "Warm, loving greeting like a family member would say — use their name, in ${ctx.nativeLanguageName}",
-  "health_summary": "1-2 SIMPLE sentences about how they're doing health-wise today, in ${ctx.nativeLanguageName}. Very easy language.",
+  "greeting": "Warm, loving greeting like a family member would say — use their name, in simple English",
+  "health_summary": "1-2 SIMPLE sentences about how they're doing health-wise today, in simple English. Very easy language.",
   "condition_insights": [
-    { "condition": "health issue name in SIMPLE ${ctx.nativeLanguageName}", "insight": "What to keep in mind about this issue in VERY SIMPLE words in ${ctx.nativeLanguageName}", "severity": "stable | watch | alert" }
+    { "condition": "health issue name in SIMPLE English", "insight": "What to keep in mind about this issue in VERY SIMPLE words in simple English", "severity": "stable | watch | alert" }
   ],
-  "medicine_alert": "ONLY if they actually SKIPPED doses (skipped > 0), lovingly but firmly remind them in ${ctx.nativeLanguageName}. If skipped is 0, set this to null.",
-  "report_highlight": "If there are reports, explain the key finding in VERY SIMPLE words in ${ctx.nativeLanguageName}. No medical jargon. null if no reports.",
-  "top_advice": "One simple, practical health tip they can do today — like what to eat, drink water, walk etc. in ${ctx.nativeLanguageName}",
-  "follow_up": "When they should visit their REAL doctor (not this app) for a checkup, in ${ctx.nativeLanguageName}"
+  "medicine_alert": "ONLY if they actually SKIPPED doses (skipped > 0), lovingly but firmly remind them in simple English. If skipped is 0, set this to null.",
+  "report_highlight": "If there are reports, explain the key finding in VERY SIMPLE words in simple English. No medical jargon. null if no reports.",
+  "top_advice": "One simple, practical health tip they can do today — like what to eat, drink water, walk etc. in simple English",
+  "follow_up": "When they should visit their REAL doctor (not this app) for a checkup, in simple English"
 }`;
 
   return callGeminiText(prompt);

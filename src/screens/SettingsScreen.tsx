@@ -91,6 +91,8 @@ export default function SettingsScreen({ navigation }: any) {
 
       {/* Header with patient card */}
       <View style={styles.headerCard}>
+        <View style={styles.headerBgCircle1} />
+        <View style={styles.headerBgCircle2} />
         <View style={styles.avatarLarge}>
           <Text style={styles.avatarText}>{(patient?.name || 'U')[0].toUpperCase()}</Text>
         </View>
@@ -104,26 +106,26 @@ export default function SettingsScreen({ navigation }: any) {
           )}
         </View>
         <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('ProfileSetup')}>
-          <Text style={styles.editBtnText}>Edit</Text>
+          <Icon name="pencil-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        <Section title="My Health">
-          <Row icon="pill" label="My Medicines" value={`${counts.active} active`} onPress={() => navigation.navigate('Medicines')} />
+        <Section title={t('my_health', { defaultValue: 'My Health' })}>
+          <Row icon="pill" label={t('my_medicines', { defaultValue: 'My Medicines' })} value={`${counts.active} ${t('active', { defaultValue: 'active' })}`} onPress={() => navigation.navigate('Medicines')} />
           <Divider />
-          <Row icon="history" label="Medicine Scan History" value={`${counts.scannedMeds} scans`} onPress={() => navigation.navigate('ScanHistory', { type: 'medicine' })} />
+          <Row icon="history" label={t('med_scan_history', { defaultValue: 'Medicine Scan History' })} value={`${counts.scannedMeds} ${t('scans', { defaultValue: 'scans' })}`} onPress={() => navigation.navigate('ScanHistory', { type: 'medicine' })} />
           <Divider />
-          <Row icon="file-document-outline" label="Report History" value={`${counts.reports} reports`} onPress={() => navigation.navigate('ScanHistory', { type: 'report' })} />
+          <Row icon="file-document-outline" label={t('report_history', { defaultValue: 'Report History' })} value={`${counts.reports} ${t('reports', { defaultValue: 'reports' })}`} onPress={() => navigation.navigate('ScanHistory', { type: 'report' })} />
           <Divider />
-          <Row icon="message-text-outline" label="Health Chat" value="Ask the bot" onPress={() => navigation.navigate('Chat')} />
+          <Row icon="message-text-outline" label={t('health_chat', { defaultValue: 'Health Chat' })} value={t('ask_the_bot', { defaultValue: 'Ask the bot' })} onPress={() => navigation.navigate('Chat')} />
         </Section>
 
-        <Section title="App Settings">
-          <Row icon="translate" label="Language" value={`${currentLang?.native} (${currentLang?.roman})`} onPress={() => navigation.navigate('Language')} />
+        <Section title={t('app_settings', { defaultValue: 'App Settings' })}>
+          <Row icon="translate" label={t('language', { defaultValue: 'Language' })} value={`${currentLang?.native} (${currentLang?.roman})`} onPress={() => navigation.navigate('Language')} />
           <Divider />
-          <Row icon="format-size" label="Text Size" value={fontScale === 1 ? 'Normal' : fontScale === 1.2 ? 'Large' : 'Extra Large'}
+          {/* <Row icon="format-size" label="Text Size" value={fontScale === 1 ? 'Normal' : fontScale === 1.2 ? 'Large' : 'Extra Large'}
             right={
               <View style={styles.fontButtons}>
                 {[1, 1.2, 1.5].map((s, i) => (
@@ -136,16 +138,16 @@ export default function SettingsScreen({ navigation }: any) {
           />
           <Divider />
           <Row icon="contrast-circle" label="High Contrast" right={<Switch value={highContrast} onValueChange={setHighContrast} trackColor={{ true: colors.primary }} />} />
-          <Divider />
+          <Divider /> */}
           <Row icon="cellphone-cog" label={t('manage_permissions', 'App Permissions')} value={t('manage_permissions_sub', 'Manage system-level permissions')} onPress={() => navigation.navigate('Permission', { fromSettings: true })} />
         </Section>
 
-        <Section title="Shortcuts & Accessibility">
-          <Row icon="keyboard-outline" label="Volume Key Shortcuts" value="Vol↑↓ = Scan · Vol↑ 3s = Report"
+        <Section title={t('shortcuts_accessibility', { defaultValue: 'Shortcuts & Accessibility' })}>
+          <Row icon="keyboard-outline" label={t('vol_shortcuts', { defaultValue: 'Volume Key Shortcuts' })} value={t('vol_shortcuts_desc', { defaultValue: 'Vol↑↓ = Scan · Vol↑ 3s = Report' })}
             right={<Switch value={shortcutsEnabled} onValueChange={setShortcutsEnabled} trackColor={{ true: colors.primary }} />}
           />
           <Divider />
-          <Row icon="book-open-variant" label="How to Use Shortcuts" onPress={() => setShowShortcutGuide(v => !v)} />
+          <Row icon="book-open-variant" label={t('how_to_use_shortcuts', { defaultValue: 'How to Use Shortcuts' })} onPress={() => setShowShortcutGuide(v => !v)} />
           {showShortcutGuide && (
             <View style={styles.guideBox}>
               <View style={styles.guideRow}>
@@ -165,24 +167,24 @@ export default function SettingsScreen({ navigation }: any) {
               <Text style={styles.guideNote}>App must be open for shortcuts to work</Text>
             </View>
           )}
-          <Divider />
+          {/* <Divider />
           <Row icon="bell-alert-outline" label="Caregiver Alerts" value="Alert family if medicine skipped 3x"
             right={<Switch value={caregiverAlertsEnabled} onValueChange={setCaregiverAlerts} trackColor={{ true: colors.primary }} />}
+          /> */}
+        </Section>
+
+        <Section title={t('privacy_data', { defaultValue: 'Privacy & Data' })}>
+          <Row icon="lock-check-outline" label={t('data_storage', { defaultValue: 'Data Storage' })} value={t('data_storage_desc', { defaultValue: 'All data is on your device only' })} />
+          <Divider />
+          <Row icon="trash-can-outline" label={t('clear_data', { defaultValue: 'Clear All Data' })} onPress={handleClearData}
+            right={<Text style={styles.dangerText}>{t('clear', { defaultValue: 'Clear' })}</Text>}
           />
         </Section>
 
-        <Section title="Privacy & Data">
-          <Row icon="lock-check-outline" label="Data Storage" value="All data is on your device only" />
+        <Section title={t('about', { defaultValue: 'About' })}>
+          <Row icon="information-outline" label={t('medisaan', { defaultValue: 'MediSaaN' })} value={t('version', { defaultValue: 'Version 1.0.0' })} />
           <Divider />
-          <Row icon="trash-can-outline" label="Clear All Data" onPress={handleClearData}
-            right={<Text style={styles.dangerText}>Clear</Text>}
-          />
-        </Section>
-
-        <Section title="About">
-          <Row icon="information-outline" label="MediSaaN" value="Version 1.0.0" />
-          <Divider />
-          <Row icon="heart-pulse" label="Made for India" value="Free for everyone · No ads ever" />
+          <Row icon="heart-pulse" label={t('made_for_india', { defaultValue: 'Made for India' })} value={t('free_no_ads', { defaultValue: 'Free for everyone · No ads ever' })} />
         </Section>
 
         <View style={{ height: 40 }} />
@@ -195,17 +197,28 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   headerCard: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.lg,
-    backgroundColor: colors.primaryDark, padding: spacing.xl, paddingBottom: spacing.xxl,
+    backgroundColor: colors.primaryDark, padding: spacing.xl,
+    borderRadius: borderRadius.xxl,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    elevation: 8,
+    shadowColor: colors.primaryDark,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    overflow: 'hidden',
   },
+  headerBgCircle1: { position: 'absolute', top: -40, right: -20, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.08)' },
+  headerBgCircle2: { position: 'absolute', bottom: -30, right: 40, width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.06)' },
   avatarLarge: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)' },
   avatarText: { ...typography.displayMedium, color: '#fff' },
   patientInfo: { flex: 1 },
   patientName: { ...typography.headingLarge, color: '#fff' },
   patientDetails: { ...typography.bodySmall, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   conditions: { ...typography.caption, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
-  editBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: borderRadius.full, backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  editBtnText: { ...typography.labelMedium, color: '#fff' },
-  scroll: { paddingTop: spacing.xl, paddingBottom: 40 },
+  editBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  scroll: { paddingTop: spacing.md, paddingBottom: 40 },
   fontButtons: { flexDirection: 'row', gap: 6 },
   fontBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1.5, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' },
   fontBtnActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },

@@ -16,6 +16,7 @@ import { colors, typography, borderRadius } from '../theme';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
+import { TranslatedText } from '../components/TranslatedText';
 
 const doctorCache = new MMKV({ id: 'doctor-consultation-cache' });
 const CACHE_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours
@@ -267,19 +268,19 @@ function AIDoctorCard({ consultation, loading, error, onRetry, expanded, onToggl
     return (
       <Animated.View style={[styles.aiCard, { opacity: fadeAnim }]}>
         <View style={[styles.aiCardSeverityStrip, { backgroundColor: colors.textMuted }]} />
-        <View style={styles.aiCardInner}>
+          <View style={styles.aiCardInner}>
           <View style={styles.aiCardHeader}>
             <View style={styles.aiDoctorAvatar}>
               <Icon name="stethoscope" size={22} color={colors.primaryDark} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.aiCardLabel}>AI Doctor</Text>
-              <Text style={styles.aiErrorText}>Could not connect to AI Doctor</Text>
+            <View style={styles.aiErrorBox}>
+              <Text style={styles.aiCardLabel}>{t('ai_doctor', { defaultValue: 'AI Doctor' })}</Text>
+              <Text style={styles.aiErrorText}>{t('ai_doctor_error', { defaultValue: 'Could not connect to AI Doctor' })}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.aiRetryBtn} onPress={onRetry} activeOpacity={0.8}>
             <Icon name="refresh" size={16} color="#fff" />
-            <Text style={styles.aiRetryText}>Try Again</Text>
+            <Text style={styles.aiRetryText}>{t('try_again', { defaultValue: 'Try Again' })}</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -303,35 +304,35 @@ function AIDoctorCard({ consultation, loading, error, onRetry, expanded, onToggl
           </View>
           <View style={{ flex: 1 }}>
             <View style={styles.aiCardLabelRow}>
-              <Text style={styles.aiCardLabel}>AI Doctor</Text>
+              <Text style={styles.aiCardLabel}>{t('ai_doctor', { defaultValue: 'AI Doctor' })}</Text>
               <View style={[styles.aiStatusBadge, { backgroundColor: sev.bg }]}>
                 <Text style={[styles.aiStatusText, { color: sev.color }]}>
-                  {sev.label} {consultation.overall_status === 'good' ? 'Good' : consultation.overall_status === 'attention_needed' ? 'Attention' : 'Alert'}
+                  {sev.label} {consultation.overall_status === 'good' ? t('good', { defaultValue: 'Good' }) : consultation.overall_status === 'attention_needed' ? t('attention', { defaultValue: 'Attention' }) : t('alert', { defaultValue: 'Alert' })}
                 </Text>
               </View>
             </View>
-            <Text style={styles.aiGreeting}>{consultation.greeting}</Text>
+            <TranslatedText style={styles.aiGreeting}>{consultation.greeting}</TranslatedText>
           </View>
         </View>
 
         {/* Health Summary */}
         <View style={styles.aiSummaryBox}>
           <Icon name="heart-pulse" size={16} color={colors.primary} />
-          <Text style={styles.aiSummaryText}>{consultation.health_summary}</Text>
+          <TranslatedText style={styles.aiSummaryText}>{consultation.health_summary}</TranslatedText>
         </View>
 
         {/* Medicine Alert */}
         {consultation.medicine_alert && (
           <View style={styles.aiAlertBox}>
             <Icon name="pill" size={16} color={colors.danger} />
-            <Text style={styles.aiAlertText}>{consultation.medicine_alert}</Text>
+            <TranslatedText style={styles.aiAlertText}>{consultation.medicine_alert}</TranslatedText>
           </View>
         )}
 
         {/* Expandable section */}
         <TouchableOpacity onPress={onToggle} activeOpacity={0.7} style={styles.aiExpandBtn}>
           <Text style={styles.aiExpandText}>
-            {expanded ? 'Show less' : 'View full consultation'}
+            {expanded ? t('show_less', { defaultValue: 'Show less' }) : t('view_full_consultation', { defaultValue: 'View full consultation' })}
           </Text>
           <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
         </TouchableOpacity>
@@ -341,15 +342,15 @@ function AIDoctorCard({ consultation, loading, error, onRetry, expanded, onToggl
             {/* Condition Insights */}
             {consultation.condition_insights?.length > 0 && (
               <View style={styles.aiInsightsSection}>
-                <Text style={styles.aiInsightsTitle}>🔍 Condition Insights</Text>
+                <Text style={styles.aiInsightsTitle}>🔍 {t('condition_insights', { defaultValue: 'Condition Insights' })}</Text>
                 {consultation.condition_insights.map((ci, idx) => {
                   const iSev = insightSeverityIcon[ci.severity] || insightSeverityIcon.stable;
                   return (
                     <View key={idx} style={styles.aiInsightRow}>
                       <Icon name={iSev.icon} size={16} color={iSev.color} style={{ marginTop: 2 }} />
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.aiInsightCondition}>{ci.condition}</Text>
-                        <Text style={styles.aiInsightText}>{ci.insight}</Text>
+                        <TranslatedText style={styles.aiInsightCondition}>{ci.condition}</TranslatedText>
+                        <TranslatedText style={styles.aiInsightText}>{ci.insight}</TranslatedText>
                       </View>
                     </View>
                   );
@@ -361,20 +362,20 @@ function AIDoctorCard({ consultation, loading, error, onRetry, expanded, onToggl
             {consultation.report_highlight && (
               <View style={styles.aiReportBox}>
                 <Icon name="file-chart-outline" size={16} color={colors.info} />
-                <Text style={styles.aiReportText}>{consultation.report_highlight}</Text>
+                <TranslatedText style={styles.aiReportText}>{consultation.report_highlight}</TranslatedText>
               </View>
             )}
 
             {/* Top Advice */}
             <View style={styles.aiAdviceBox}>
               <Icon name="lightbulb-on-outline" size={16} color="#F59E0B" />
-              <Text style={styles.aiAdviceText}>{consultation.top_advice}</Text>
+              <TranslatedText style={styles.aiAdviceText}>{consultation.top_advice}</TranslatedText>
             </View>
 
             {/* Follow-up */}
             <View style={styles.aiFollowUpBox}>
               <Icon name="calendar-clock" size={15} color={colors.primary} />
-              <Text style={styles.aiFollowUpText}>{consultation.follow_up}</Text>
+              <TranslatedText style={styles.aiFollowUpText}>{consultation.follow_up}</TranslatedText>
             </View>
           </View>
         )}
@@ -637,9 +638,9 @@ export default function HomeScreen({ navigation }: any) {
 
           <Animated.View style={[styles.welcomeBlock, { marginHorizontal:20},introStyle]}>
             <View style={styles.welcomeCopy}>
-              <Text style={styles.welcomeSmall}>Welcome back</Text>
+              <Text style={styles.welcomeSmall}>{t('welcome_back', { defaultValue: 'Welcome back' })}</Text>
               <Text style={styles.welcomeName}>
-                {greeting.text},{'\n'}{patient?.name || 'Dost'}!
+                {greeting.text},{'\n'}{patient?.name || t('friend', { defaultValue: 'Friend' })}!
               </Text>
             </View>
             <TouchableOpacity onPress={() => navigation.navigate('Profile')} activeOpacity={0.85}>
@@ -681,23 +682,23 @@ export default function HomeScreen({ navigation }: any) {
           ) : (
             <Animated.View style={[styles.todayHeroCard , { marginHorizontal:20}, introStyle]}>
               <View style={styles.todayHeroTop}>
-                <Text style={styles.todayHeroTitle}>Today's Medicine</Text>
+                <Text style={styles.todayHeroTitle}>{t('todays_medicine', { defaultValue: "Today's Medicine" })}</Text>
                 <Icon name="pill" size={62} color="rgba(21,94,117,0.2)" />
               </View>
               <View style={styles.progressLabelRow}>
-                <Text style={styles.progressText}>Progress</Text>
-                <Text style={styles.progressTaken}>{todayStats.taken} of {todayStats.total} Taken</Text>
+                <Text style={styles.progressText}>{t('progress', { defaultValue: 'Progress' })}</Text>
+                <Text style={styles.progressTaken}>{t('of_taken', { taken: todayStats.taken, total: todayStats.total, defaultValue: '{{taken}} of {{total}} Taken' })}</Text>
               </View>
               <View style={styles.heroProgressTrack}>
                 <View style={[styles.heroProgressFill, { width: `${Math.round(progress * 100)}%` }]} />
               </View>
               <View style={styles.heroMiniGrid}>
                 <View style={styles.heroMiniCard}>
-                  <Text style={styles.heroMiniLabel}>Next Dose</Text>
+                  <Text style={styles.heroMiniLabel}>{t('next_dose', { defaultValue: 'Next Dose' })}</Text>
                   <Text style={styles.heroMiniValue}>{nextDoseTime}</Text>
                 </View>
                 <View style={[styles.heroMiniCard, styles.heroScoreCard]}>
-                  <Text style={styles.heroMiniLabel}>Health Score</Text>
+                  <Text style={styles.heroMiniLabel}>{t('health_score', { defaultValue: 'Health Score' })}</Text>
                   <Text style={[styles.heroMiniValue, styles.heroScoreValue]}>{healthScore}%</Text>
                 </View>
               </View>
@@ -709,10 +710,10 @@ export default function HomeScreen({ navigation }: any) {
         <Animated.View style={[styles.section, introStyle]}>
           <View style={[styles.sectionRow, { alignItems: 'flex-end' }]}>
             <View>
-              <Text style={[styles.sectionTitle, { marginBottom: 2 }]}>🩺 AI Doctor</Text>
+              <Text style={[styles.sectionTitle, { marginBottom: 2 }]}>🩺 {t('ai_doctor', { defaultValue: 'AI Doctor' })}</Text>
               {aiUpdatedTime && !aiLoading && (
                 <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '500' }}>
-                  Updated at {aiUpdatedTime}
+                  {t('updated_at', { time: aiUpdatedTime, defaultValue: 'Updated at {{time}}' })}
                 </Text>
               )}
             </View>
@@ -737,9 +738,9 @@ export default function HomeScreen({ navigation }: any) {
         {/* ── AI Tools ── */}
         <Animated.View style={[styles.section, introStyle]}>
           <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>{t('essential_tools')}</Text>
+            <Text style={styles.sectionTitle}>{t('essential_tools', { defaultValue: 'Essential Tools' })}</Text>
             <View style={styles.aiBadge}>
-              <Text style={styles.aiBadgeText}>⚡ AI Powered</Text>
+              <Text style={styles.aiBadgeText}>⚡ {t('ai_powered', { defaultValue: 'AI Powered' })}</Text>
             </View>
           </View>
 
@@ -778,7 +779,7 @@ export default function HomeScreen({ navigation }: any) {
 
         <Animated.View style={[styles.voiceHintCard, introStyle]}>
           <Icon name="lightbulb-on-outline" size={19} color="#fff" />
-          <Text style={styles.voiceHintText}>Try saying "Hey Saathi, read my report"</Text>
+          <Text style={styles.voiceHintText}>{t('voice_hint', { defaultValue: 'Try saying "Hey Saathi, read my report"' })}</Text>
         </Animated.View>
 
         {/* ── Add Medicine CTA ── */}

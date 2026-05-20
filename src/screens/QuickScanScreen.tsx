@@ -16,6 +16,8 @@ import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
 import { useTranslation } from 'react-i18next';
+import { TranslatedText } from '../components/TranslatedText';
+import { useTranslateAIResponse } from '../hooks/useTranslateAIResponse';
 
 // ─── Stage messages per language ────────────────────────────────────────────
 
@@ -43,7 +45,7 @@ const STAGE_MESSAGES: Record<string, Record<LangCode, { label: string; sub: stri
   processing: {
     en: { label: 'Identifying medicine…', sub: 'Reading composition & dosage',          voice: 'Identifying the medicine, please wait.' },
     hi: { label: 'दवाई पहचान रहे हैं…',   sub: 'संरचना और खुराक पढ़ रहे हैं',           voice: 'दवाई की पहचान हो रही है, कृपया प्रतीक्षा करें।' },
-    bn: { label: 'ওষুধ সনাক্ত হচ্ছে…',    sub: 'রচনা ও মাত্রা পড়া হচ্ছে',              voice: 'ওষুধ সনাক্ত হচ্ছে, অপেক্ষা করুন।' },
+    bn: { label: 'ওষুধ সনাক্ত হচ্ছে…',    sub: 'রচনা ও মাত্রা পড়া হচ্ছে',              voice: 'ওষুধ সনাক্ত হচ্ছে, অপেক্ষা করুন.' },
     ta: { label: 'மருந்து கண்டறிகிறது…',   sub: 'கலவை மற்றும் அளவு படிக்கப்படுகிறது',  voice: 'மருந்து கண்டறியப்படுகிறது, காத்திருங்கள்.' },
     te: { label: 'మందు గుర్తిస్తున్నారు…', sub: 'కూర్పు మరియు మోతాదు చదువుతున్నారు',   voice: 'మందు గుర్తిస్తున్నారు, దయచేసి వేచి ఉండండి.' },
     mr: { label: 'औषध ओळखत आहोत…',        sub: 'संरचना आणि मात्रा वाचत आहोत',          voice: 'औषध ओळखले जात आहे, कृपया थांबा.' },
@@ -65,10 +67,7 @@ function ScanningOverlay({ stage, lang }: { stage: string; lang: string }) {
   const fade  = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Fade in
     Animated.timing(fade, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-
-    // Pulse ring
     const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1.25, duration: 900, easing: Easing.out(Easing.ease), useNativeDriver: true }),
@@ -76,51 +75,31 @@ function ScanningOverlay({ stage, lang }: { stage: string; lang: string }) {
       ]),
     );
     pulseLoop.start();
-
-    // Spinner
     const spinLoop = Animated.loop(
       Animated.timing(spin, { toValue: 1, duration: 1800, easing: Easing.linear, useNativeDriver: true }),
     );
     spinLoop.start();
-
     return () => { pulseLoop.stop(); spinLoop.stop(); };
   }, [stage]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-
-  const stageEmoji: Record<string, string> = {
-    capturing: '📷',
-    validating: '🔍',
-    processing: '💊',
-  };
-
+  const stageEmoji: Record<string, string> = { capturing: '📷', validating: '🔍', processing: '💊' };
   const msg = getMsg(stage, lang);
 
   return (
     <Animated.View style={[so.overlay, { opacity: fade }]}>
-      {/* Radial gradient-like background rings */}
       <View style={so.bgRing3} />
       <View style={so.bgRing2} />
       <View style={so.bgRing1} />
-
-      {/* Outer pulse ring */}
       <Animated.View style={[so.pulseRing, { transform: [{ scale: pulse }] }]} />
-
-      {/* Spinner arc */}
       <Animated.View style={[so.spinner, { transform: [{ rotate }] }]} />
-
-      {/* Center icon */}
       <View style={so.iconCircle}>
         <Text style={so.iconEmoji}>{stageEmoji[stage] ?? '⏳'}</Text>
       </View>
-
-      {/* Text */}
       <View style={so.textBlock}>
         <Text style={so.label}>{msg?.label ?? '…'}</Text>
         <Text style={so.sub}>{msg?.sub ?? ''}</Text>
       </View>
-
-      {/* Progress dots */}
       <View style={so.dots}>
         {['capturing', 'validating', 'processing'].map((s, i) => (
           <View
@@ -139,42 +118,13 @@ function ScanningOverlay({ stage, lang }: { stage: string; lang: string }) {
 
 const RING = 140;
 const so = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.93)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 30,
-    gap: 24,
-  },
+  overlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.93)', justifyContent: 'center', alignItems: 'center', zIndex: 30, gap: 24 },
   bgRing3: { position: 'absolute', width: RING + 140, height: RING + 140, borderRadius: (RING + 140) / 2, backgroundColor: 'rgba(34,197,94,0.04)' },
   bgRing2: { position: 'absolute', width: RING + 80,  height: RING + 80,  borderRadius: (RING + 80) / 2,  backgroundColor: 'rgba(34,197,94,0.06)' },
   bgRing1: { position: 'absolute', width: RING + 30,  height: RING + 30,  borderRadius: (RING + 30) / 2,  backgroundColor: 'rgba(34,197,94,0.09)' },
-  pulseRing: {
-    position: 'absolute',
-    width: RING + 10, height: RING + 10,
-    borderRadius: (RING + 10) / 2,
-    borderWidth: 1.5,
-    borderColor: 'rgba(34,197,94,0.35)',
-  },
-  spinner: {
-    position: 'absolute',
-    width: RING + 20, height: RING + 20,
-    borderRadius: (RING + 20) / 2,
-    borderWidth: 3,
-    borderColor: 'transparent',
-    borderTopColor: '#22C55E',
-    borderRightColor: 'rgba(34,197,94,0.3)',
-  },
-  iconCircle: {
-    width: RING, height: RING,
-    borderRadius: RING / 2,
-    backgroundColor: 'rgba(34,197,94,0.12)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(34,197,94,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  pulseRing: { position: 'absolute', width: RING + 10, height: RING + 10, borderRadius: (RING + 10) / 2, borderWidth: 1.5, borderColor: 'rgba(34,197,94,0.35)' },
+  spinner: { position: 'absolute', width: RING + 20, height: RING + 20, borderRadius: (RING + 20) / 2, borderWidth: 3, borderColor: 'transparent', borderTopColor: '#22C55E', borderRightColor: 'rgba(34,197,94,0.3)' },
+  iconCircle: { width: RING, height: RING, borderRadius: RING / 2, backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 1.5, borderColor: 'rgba(34,197,94,0.3)', justifyContent: 'center', alignItems: 'center' },
   iconEmoji: { fontSize: 52 },
   textBlock: { alignItems: 'center', gap: 8, paddingHorizontal: 40 },
   label: { fontSize: 22, fontWeight: '700', color: '#fff', textAlign: 'center', letterSpacing: 0.3 },
@@ -207,6 +157,7 @@ export default function QuickScanScreen({ navigation }: any) {
   const [isCameraActive, setIsCameraActive]   = useState(true);
   const [loading, setLoading]                 = useState(false);
   const [result, setResult]                   = useState<any>(null);
+  const translatedDesc = useTranslateAIResponse(result?.simple_description || '');
   const [showDetailed, setShowDetailed]       = useState(false);
   const [activeTab, setActiveTab]             = useState(0);
   const [scanStatus, setScanStatus]           = useState(t('scan_instruction'));
@@ -263,7 +214,9 @@ export default function QuickScanScreen({ navigation }: any) {
       setResult(data);
       setFrameState('candidate');
       setScanStatus(t('status_normal'));
-      TTSService.speak(data.simple_description || data.medicine_name);
+      // The translatedDesc will update on next render, so user can press the sound icon to hear it in their language.
+      // But we can speak it immediately if we wait for translation. For now, we will let them press the button if they want to hear the description.
+      // Or we can just play a sound. We'll skip speaking English here since it's incorrect.
       if (patient.id) {
         const history = getScanHistory(patient.id);
         const duplicate = history.find(h => {
@@ -300,18 +253,28 @@ export default function QuickScanScreen({ navigation }: any) {
   const handleCapture = useCallback(async () => {
     if (!camera.current || isScanningRef.current) return;
     isScanningRef.current = true;
+    
+    setLoading(true);
+    setProcessingStage('capturing');
+    setScanStatus(t('loading'));
+    
+    // Let UI render and voice start before blocking native call
+    await new Promise(r => setTimeout(r, 800));
+
     let filePath = '';
     try {
       const photo = await camera.current.takePhoto({ flash: 'off', enableShutterSound: false });
       filePath = photo.path;
     } catch {
       isScanningRef.current = false;
+      setProcessingStage('idle');
+      setLoading(false);
       Alert.alert(t('error_generic'), 'Camera error');
       return;
     }
-    setLoading(true);
+    
     setProcessingStage('validating');
-    setScanStatus(t('loading'));
+    await new Promise(r => setTimeout(r, 1000));
     await processImage('file://' + filePath, false);
   }, [processImage, t]);
 
@@ -435,9 +398,9 @@ export default function QuickScanScreen({ navigation }: any) {
                 </View>
               ) : null}
             </View>
-            <Text style={styles.simpleDescript}>{result.simple_description}</Text>
+            <TranslatedText style={styles.simpleDescript}>{result.simple_description}</TranslatedText>
             <View style={styles.simpleActions}>
-              <TouchableOpacity style={styles.speakBtn} onPress={() => TTSService.speak(result.simple_description)}>
+              <TouchableOpacity style={styles.speakBtn} onPress={() => TTSService.speak(translatedDesc)}>
                 <Text style={styles.speakBtnText}>🔊 {t('continue')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.moreBtn} onPress={() => setShowDetailed(true)}>
@@ -481,17 +444,25 @@ export default function QuickScanScreen({ navigation }: any) {
               </ScrollView>
             </View>
             <ScrollView contentContainerStyle={styles.tabContent}>
-              <Text style={styles.tabBody}>
-                {activeTab === 0 ? result.uses :
-                 activeTab === 1 ? result.dosage_instructions :
-                 activeTab === 2 ? result.side_effects :
-                 activeTab === 3 ? result.warnings :
-                 result.how_to_take ? HOW_TO_LABEL(result.how_to_take) + '\n\n' + (result.drug_interactions || '') : ''}
-              </Text>
+              <View style={styles.tabContentBox}>
+                {activeTab === 4 ? (
+                  <>
+                    {result.how_to_take ? <Text style={styles.tabContentText}>{HOW_TO_LABEL(result.how_to_take)}{'\n\n'}</Text> : null}
+                    <TranslatedText style={styles.tabContentText}>{result.drug_interactions || ''}</TranslatedText>
+                  </>
+                ) : (
+                  <TranslatedText style={styles.tabContentText}>
+                    {activeTab === 0 ? result.uses :
+                     activeTab === 1 ? result.dosage_instructions :
+                     activeTab === 2 ? result.side_effects :
+                     result.warnings}
+                  </TranslatedText>
+                )}
+              </View>
               {result.drug_interactions && activeTab === 4 && (
                 <View style={styles.interactionBox}>
-                  <Text style={styles.interactionTitle}>⚠️ {t('warnings')}</Text>
-                  <Text style={styles.interactionText}>{result.drug_interactions}</Text>
+                  <Text style={styles.interactionTitle}>⚠️ Drug Interactions</Text>
+                  <TranslatedText style={styles.interactionText}>{result.drug_interactions}</TranslatedText>
                 </View>
               )}
             </ScrollView>

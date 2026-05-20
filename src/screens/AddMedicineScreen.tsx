@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, StatusBar, SafeAreaView, Alert, Switch, Modal,
+  TextInput, StatusBar, SafeAreaView, Alert, Modal,
   NativeModules,
 } from 'react-native';
 import { usePatientStore } from '../store/patientStore';
 import { addMedicine, updateMedicine } from '../db/queries/medicines';
 import { useReminders } from '../hooks/useReminders';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
+import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 
 const UNITS = ['tablet', 'capsule', 'ml', 'mg', 'drops', 'spoon', 'patch'];
@@ -34,6 +35,7 @@ const tb = StyleSheet.create({
 });
 
 export default function AddMedicineScreen({ navigation, route }: any) {
+  const { t } = useTranslation();
   const { patient } = usePatientStore();
   const { scheduleAll, cancelAll } = useReminders();
   const initialData = route.params?.initialData;
@@ -48,11 +50,10 @@ export default function AddMedicineScreen({ navigation, route }: any) {
   const [daysType, setDaysType] = useState(editMed?.days_type || 'daily');
   const [customDays, setCDays]  = useState<string[]>(editMed ? JSON.parse(editMed.custom_days) : []);
   const [startDate]             = useState(editMed?.start_date || dayjs().format('YYYY-MM-DD'));
-  const [hasEndDate, setHasEnd] = useState(!!editMed?.end_date);
   const [stock, setStock]       = useState(editMed?.stock_quantity?.toString() || '30');
   const [notes, setNotes]       = useState(editMed?.notes || initialData?.notes || '');
-  const [imagePath, setImage]   = useState(editMed?.image_path || initialData?.image_path || '');
-  const [scanCache, setCache]   = useState(editMed?.scan_cache_json || initialData?.scan_cache_json || '');
+  const [imagePath]             = useState(editMed?.image_path || initialData?.image_path || '');
+  const [scanCache]             = useState(editMed?.scan_cache_json || initialData?.scan_cache_json || '');
   const [saving, setSaving]     = useState(false);
   const [pickerIndex, setPickerIndex] = useState<number | null>(null);
   const [selectedHour, setSelectedHour] = useState('08');
@@ -72,14 +73,11 @@ export default function AddMedicineScreen({ navigation, route }: any) {
           updateTime(index, `${hourStr}:${minuteStr}`);
         }
       } catch (err) {
-        console.warn('Failed to show native time picker, falling back to custom modal:', err);
-        // Fallback to custom modal picker
         setSelectedHour(h.toString().padStart(2, '0'));
         setSelectedMinute(m.toString().padStart(2, '0'));
         setPickerIndex(index);
       }
     } else {
-      // Fallback to custom modal picker
       setSelectedHour(h.toString().padStart(2, '0'));
       setSelectedMinute(m.toString().padStart(2, '0'));
       setPickerIndex(index);
@@ -99,12 +97,11 @@ export default function AddMedicineScreen({ navigation, route }: any) {
   };
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert('Required', 'Please enter medicine name.'); return; }
-    if (!patient?.id) { Alert.alert('Error', 'Patient profile not found.'); return; }
+    if (!name.trim()) { Alert.alert(t('required', 'Required'), t('enter_med_name', 'Please enter medicine name.')); return; }
+    if (!patient?.id) { Alert.alert(t('error', 'Error'), t('patient_not_found', 'Patient profile not found.')); return; }
     setSaving(true);
     try {
       if (editMed) {
-        // Update mode
         updateMedicine(editMed.id, {
           name: name.trim(), generic_name: genericName.trim(),
           image_path: imagePath,
@@ -114,12 +111,11 @@ export default function AddMedicineScreen({ navigation, route }: any) {
           start_date: startDate, end_date: null,
           stock_quantity: parseInt(stock) || 0, notes: notes.trim(),
         });
-        await cancelAll(editMed.id); // Refresh reminders
+        await cancelAll(editMed.id);
         const med = { id: editMed.id, name: name.trim(), dose_amount: doseAmt, dose_unit: unit, dose_times: JSON.stringify(doseTimes) };
         await scheduleAll([med]);
-        Alert.alert('✅ Updated', `${name} updated successfully!`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+        Alert.alert(t('updated', 'Updated'), t('med_updated', `${name} updated successfully!`), [{ text: 'OK', onPress: () => navigation.goBack() }]);
       } else {
-        // Add mode
         const id = addMedicine({
           patient_id: patient.id, name: name.trim(), generic_name: genericName.trim(),
           image_path: imagePath,
@@ -132,10 +128,10 @@ export default function AddMedicineScreen({ navigation, route }: any) {
         });
         const med = { id, name: name.trim(), dose_amount: doseAmt, dose_unit: unit, dose_times: JSON.stringify(doseTimes) };
         await scheduleAll([med]);
-        Alert.alert('✅ Saved', `${name} added successfully!`, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+        Alert.alert(t('saved', 'Saved'), t('med_added', `${name} added successfully!`), [{ text: 'OK', onPress: () => navigation.goBack() }]);
       }
     } catch (e: any) {
-      Alert.alert('Error', `Could not save medicine: ${e.message || 'Unknown error'}`);
+      Alert.alert(t('error', 'Error'), `${t('save_failed', 'Could not save medicine')}: ${e.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -146,34 +142,34 @@ export default function AddMedicineScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>{t('back', '← Back')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Medicine</Text>
+        <Text style={styles.headerTitle}>{t('add_medicine', 'Add Medicine')}</Text>
         <View style={{ width: 60 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Medicine Details</Text>
+          <Text style={styles.sectionTitle}>{t('medicine_details', 'Medicine Details')}</Text>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Medicine Name *</Text>
+            <Text style={styles.fieldLabel}>{t('medicine_name', 'Medicine Name *')}</Text>
             <TextInput style={styles.input} value={name} onChangeText={setName}
-              placeholder="e.g. Metformin 500mg" placeholderTextColor={colors.textMuted} />
+              placeholder={t('eg_metformin', 'e.g. Metformin 500mg')} placeholderTextColor={colors.textMuted} />
           </View>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Generic / Salt Name</Text>
+            <Text style={styles.fieldLabel}>{t('generic_name', 'Generic / Salt Name')}</Text>
             <TextInput style={styles.input} value={genericName} onChangeText={setGen}
-              placeholder="e.g. Metformin HCl (optional)" placeholderTextColor={colors.textMuted} />
+              placeholder={t('eg_generic', 'e.g. Metformin HCl (optional)')} placeholderTextColor={colors.textMuted} />
           </View>
           <View style={styles.fieldRow}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.fieldLabel}>Dose Amount</Text>
+              <Text style={styles.fieldLabel}>{t('dose_amount', 'Dose Amount')}</Text>
               <TextInput style={styles.input} value={doseAmt} onChangeText={setDoseAmt}
                 keyboardType="decimal-pad" placeholder="1" placeholderTextColor={colors.textMuted} />
             </View>
             <View style={[styles.field, { flex: 1.5 }]}>
-              <Text style={styles.fieldLabel}>Unit</Text>
+              <Text style={styles.fieldLabel}>{t('unit', 'Unit')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.unitRow}>
                   {UNITS.map(u => (
@@ -188,9 +184,9 @@ export default function AddMedicineScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Schedule</Text>
+          <Text style={styles.sectionTitle}>{t('schedule', 'Schedule')}</Text>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Times Per Day</Text>
+            <Text style={styles.fieldLabel}>{t('times_per_day', 'Times Per Day')}</Text>
             <View style={styles.stepperRow}>
               {[1,2,3,4].map(n => (
                 <TouchableOpacity key={n} style={[styles.stepperBtn, timesPerDay === n && styles.stepperBtnActive]}
@@ -201,7 +197,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
             </View>
           </View>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Dose Times</Text>
+            <Text style={styles.fieldLabel}>{t('dose_times', 'Dose Times')}</Text>
             <View style={styles.timesRow}>
               {doseTimes.map((t: string, i: number) => (
                 <TimeButton key={i} time={t} onPress={() => openTimePicker(i)} />
@@ -209,7 +205,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
             </View>
           </View>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Frequency</Text>
+            <Text style={styles.fieldLabel}>{t('frequency', 'Frequency')}</Text>
             <View style={styles.daysRow}>
               {DAYS_TYPES.map(d => (
                 <TouchableOpacity key={d} style={[styles.dayChip, daysType === d && styles.dayChipActive]} onPress={() => setDaysType(d)}>
@@ -220,7 +216,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
           </View>
           {daysType === 'weekly' && (
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Select Days</Text>
+              <Text style={styles.fieldLabel}>{t('select_days', 'Select Days')}</Text>
               <View style={styles.weekRow}>
                 {WEEKDAYS.map(d => (
                   <TouchableOpacity key={d} style={[styles.weekBtn, customDays.includes(d) && styles.weekBtnActive]}
@@ -234,17 +230,17 @@ export default function AddMedicineScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Stock & Notes</Text>
+          <Text style={styles.sectionTitle}>{t('stock_notes', 'Stock & Notes')}</Text>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Stock Quantity (tablets/units)</Text>
+            <Text style={styles.fieldLabel}>{t('stock_quantity', 'Stock Quantity (tablets/units)')}</Text>
             <TextInput style={styles.input} value={stock} onChangeText={setStock}
               keyboardType="numeric" placeholder="e.g. 30" placeholderTextColor={colors.textMuted} />
           </View>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Notes (optional)</Text>
+            <Text style={styles.fieldLabel}>{t('notes', 'Notes (optional)')}</Text>
             <TextInput style={[styles.input, { height: 72, textAlignVertical: 'top', paddingTop: 12 }]}
               value={notes} onChangeText={setNotes} multiline
-              placeholder="e.g. Take with food, shake before use" placeholderTextColor={colors.textMuted} />
+              placeholder={t('eg_notes', 'e.g. Take with food, shake before use')} placeholderTextColor={colors.textMuted} />
           </View>
         </View>
 
@@ -253,14 +249,14 @@ export default function AddMedicineScreen({ navigation, route }: any) {
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving} activeOpacity={0.85}>
-          <Text style={styles.saveBtnText}>{saving ? 'Saving...' : '✓ Save Medicine'}</Text>
+          <Text style={styles.saveBtnText}>{saving ? t('saving', 'Saving...') : t('save_medicine', '✓ Save Medicine')}</Text>
         </TouchableOpacity>
       </View>
 
       <Modal visible={pickerIndex !== null} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.pickerContainer}>
-            <Text style={styles.pickerTitle}>Set Dose Time</Text>
+            <Text style={styles.pickerTitle}>{t('set_dose_time', 'Set Dose Time')}</Text>
             
             <View style={styles.digitalDisplay}>
               <Text style={styles.digitalText}>{selectedHour}</Text>
@@ -270,7 +266,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
 
             <View style={styles.pickersRow}>
               <View style={styles.columnContainer}>
-                <Text style={styles.columnLabel}>Hour</Text>
+                <Text style={styles.columnLabel}>{t('hour', 'Hour')}</Text>
                 <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
                   {Array.from({ length: 24 }).map((_, i) => {
                     const val = i.toString().padStart(2, '0');
@@ -289,7 +285,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
               </View>
 
               <View style={styles.columnContainer}>
-                <Text style={styles.columnLabel}>Minute</Text>
+                <Text style={styles.columnLabel}>{t('minute', 'Minute')}</Text>
                 <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
                   {Array.from({ length: 60 }).map((_, i) => {
                     const val = i.toString().padStart(2, '0');
@@ -310,7 +306,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
 
             <View style={styles.pickerActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setPickerIndex(null)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.cancelBtnText}>{t('cancel', 'Cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.confirmBtn} onPress={() => {
                 if (pickerIndex !== null) {
@@ -318,7 +314,7 @@ export default function AddMedicineScreen({ navigation, route }: any) {
                 }
                 setPickerIndex(null);
               }}>
-                <Text style={styles.confirmBtnText}>Set Time</Text>
+                <Text style={styles.confirmBtnText}>{t('set_time', 'Set Time')}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Image, TouchableOpacity, 
   SafeAreaView, StatusBar, Animated, Dimensions, Vibration, Platform, Alert, NativeModules
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import { logReminderAction } from '../db/queries/medicines';
 import { NotificationService } from '../services/NotificationService';
@@ -189,77 +190,126 @@ export default function AlarmScreen({ route, navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#EF4444" />
-      
-      <View style={styles.header}>
-        <Text style={styles.alertTitle}>{t('alarm_title')}</Text>
-        <Text style={styles.currentTime}>{currentTime}</Text>
-      </View>
-
-      <View style={styles.main}>
-        <Animated.View style={[styles.imageContainer, { transform: [{ scale: pulseAnim }] }]}>
-          {medicine?.image_path ? (
-            <Image source={{ uri: medicine.image_path }} style={styles.image} />
-          ) : (
-            <View style={styles.placeholder}><Text style={styles.placeholderText}>💊</Text></View>
-          )}
-        </Animated.View>
-
-        <Text style={styles.medName}>{medicine?.name || t('medicine_name')}</Text>
-        <Text style={styles.medDose}>{medicine?.dose_amount} {medicine?.dose_unit} • {t('dose_time')}: {scheduledTime}</Text>
+    <LinearGradient colors={[colors.primaryDark, '#0B5462', colors.primary]} style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor={colors.primaryDark} />
         
-        {delayText ? (
-          <View style={styles.lateBadge}>
-            <Text style={styles.lateBadgeText}>⚠️ {delayText}</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.warningBox}>
-          <Text style={styles.warningText}>{t('alarm_warning')}</Text>
+        <View style={styles.header}>
+          <Text style={styles.alertTitle}>{t('alarm_title')}</Text>
+          <Text style={styles.currentTime}>{currentTime}</Text>
         </View>
-      </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.takeBtn} onPress={handleTake} activeOpacity={0.8}>
-          <Text style={styles.takeBtnText}>{t('take_now')}</Text>
-        </TouchableOpacity>
         
-        <TouchableOpacity style={styles.snoozeBtn} onPress={handleSnooze} activeOpacity={0.8}>
-          <Text style={styles.snoozeBtnText}>{t('remind_30m')}</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        <View style={styles.main}>
+          <Animated.View style={[styles.imageContainer, { transform: [{ scale: pulseAnim }] }]}>
+            {medicine?.image_path ? (
+              <Image source={{ uri: medicine.image_path }} style={styles.image} />
+            ) : (
+              <View style={styles.placeholder}><Text style={styles.placeholderText}>💊</Text></View>
+            )}
+          </Animated.View>
+
+          <Text style={styles.medName}>{medicine?.name || t('medicine_name')}</Text>
+          <Text style={styles.medDose}>{medicine?.dose_amount} {medicine?.dose_unit} • {t('dose_time')}: {scheduledTime}</Text>
+          
+          {delayText ? (
+            <View style={styles.lateBadge}>
+              <Text style={styles.lateBadgeText}>⚠️ {delayText}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.warningBox}>
+            <Text style={styles.warningText}>{t('alarm_warning')}</Text>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <TouchableOpacity style={styles.takeBtn} onPress={handleTake} activeOpacity={0.8}>
+            <Text style={styles.takeBtnText}>{t('take_now')}</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.snoozeBtn} onPress={handleSnooze} activeOpacity={0.8}>
+            <Text style={styles.snoozeBtnText}>{t('remind_30m')}</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#EF4444' },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
   header: { alignItems: 'center', paddingTop: 40, paddingBottom: 20 },
   alertTitle: { fontSize: 16, fontWeight: '900', color: '#fff', letterSpacing: 4, opacity: 0.8 },
   currentTime: { fontSize: 32, fontWeight: '800', color: '#fff', marginTop: 10 },
   
   main: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
-  imageContainer: { width: 220, height: 220, borderRadius: 110, backgroundColor: '#fff', padding: 10, elevation: 20, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, marginBottom: 40 },
-  image: { width: '100%', height: '100%', borderRadius: 100 },
-  placeholder: { width: '100%', height: '100%', borderRadius: 100, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
-  placeholderText: { fontSize: 80 },
+  imageContainer: { 
+    width: 200, 
+    height: 200, 
+    borderRadius: 100, 
+    backgroundColor: '#fff', 
+    padding: 8, 
+    elevation: 20, 
+    shadowColor: '#000', 
+    shadowOpacity: 0.3, 
+    shadowRadius: 15, 
+    shadowOffset: { width: 0, height: 8 }, 
+    marginBottom: 40 
+  },
+  image: { width: '100%', height: '100%', borderRadius: 92 },
+  placeholder: { 
+    width: '100%', 
+    height: '100%', 
+    borderRadius: 92, 
+    backgroundColor: '#E6F7F8', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  placeholderText: { fontSize: 70 },
   
   medName: { fontSize: 32, fontWeight: '900', color: '#fff', textAlign: 'center' },
-  medDose: { fontSize: 18, color: 'rgba(255,255,255,0.8)', fontWeight: '600', marginTop: 10 },
+  medDose: { fontSize: 18, color: 'rgba(255,255,255,0.85)', fontWeight: '600', marginTop: 10 },
   
-  warningBox: { marginTop: 30, backgroundColor: 'rgba(255,255,255,0.15)', padding: 16, borderRadius: 16 },
+  warningBox: { 
+    marginTop: 30, 
+    backgroundColor: 'rgba(255,255,255,0.12)', 
+    padding: 16, 
+    borderRadius: 16,
+    borderColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    maxWidth: SCREEN_WIDTH - 80,
+  },
   warningText: { color: '#fff', textAlign: 'center', fontSize: 14, fontWeight: '500', lineHeight: 20 },
   
   footer: { padding: 40, gap: 16 },
-  takeBtn: { backgroundColor: '#fff', height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  takeBtnText: { color: '#EF4444', fontSize: 20, fontWeight: '900' },
-  snoozeBtn: { backgroundColor: 'rgba(0,0,0,0.3)', height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center' },
+  takeBtn: { 
+    backgroundColor: '#fff', 
+    height: 64, 
+    borderRadius: 32, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  takeBtnText: { color: colors.primary, fontSize: 18, fontWeight: '900', letterSpacing: 1 },
+  snoozeBtn: { 
+    backgroundColor: 'rgba(255,255,255,0.12)', 
+    height: 56, 
+    borderRadius: 28, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
   snoozeBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   lateBadge: {
     marginTop: 15,
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FCA5A5',
+    backgroundColor: colors.warningLight,
+    borderColor: colors.warning,
     borderWidth: 1.5,
     borderRadius: 20,
     paddingVertical: 8,
@@ -272,7 +322,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   lateBadgeText: {
-    color: '#DC2626',
+    color: colors.warning,
     fontWeight: '800',
     fontSize: 14,
   },

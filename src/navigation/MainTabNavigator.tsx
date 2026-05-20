@@ -6,6 +6,7 @@ import { colors, sizes, typography, borderRadius } from '../theme';
 
 import HomeScreen from '../screens/HomeScreen';
 import MedicineListScreen from '../screens/MedicineListScreen';
+import ChatScreen from '../screens/ChatScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -13,6 +14,7 @@ const Tab = createBottomTabNavigator();
 const TAB_ICON: Record<string, string> = {
   Home: 'view-dashboard-outline',
   Medicines: 'pill',
+  Chat: 'robot-happy-outline',
   Profile: 'account-heart-outline',
 };
 
@@ -42,6 +44,7 @@ export default function MainTabNavigator() {
     >
       <Tab.Screen name="Home"      component={HomeScreen}         options={{ tabBarLabel: 'Home' }} />
       <Tab.Screen name="Medicines" component={MedicineListScreen} options={{ tabBarLabel: 'Medicines' }} />
+      <Tab.Screen name="Chat"      component={ChatScreen}         options={{ tabBarLabel: 'AI Chat' }} />
       <Tab.Screen name="Profile"   component={SettingsScreen}     options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );

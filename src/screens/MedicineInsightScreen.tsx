@@ -4,10 +4,13 @@ import { colors, typography, spacing, borderRadius } from '../theme';
 import dayjs from 'dayjs';
 import { stopMedicine } from '../db/queries/medicines';
 import { db } from '../db/schema';
+import { useTranslation } from 'react-i18next';
+import { TranslatedText } from '../components/TranslatedText';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function MedicineInsightScreen({ route, navigation }: any) {
+  const { t } = useTranslation();
   const { med } = route.params;
   const doseTimes = useMemo(() => JSON.parse(med.dose_times || '[]').sort(), [med.dose_times]);
   
@@ -19,9 +22,9 @@ export default function MedicineInsightScreen({ route, navigation }: any) {
   const monthLabel = weekStart.format('MMMM YYYY');
 
   const handleStop = () => {
-    Alert.alert('Stop Medicine', `Stop taking ${med.name}? This will end the medicine schedule.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Stop', style: 'destructive', onPress: () => {
+    Alert.alert(t('stop_medicine', { defaultValue: 'Stop Medicine' }), `${t('stop_medicine_prompt', { defaultValue: 'Stop taking' })} ${med.name}?`, [
+      { text: t('cancel', { defaultValue: 'Cancel' }), style: 'cancel' },
+      { text: t('stop', { defaultValue: 'Stop' }), style: 'destructive', onPress: () => {
         stopMedicine(med.id, 'Stopped by user');
         navigation.goBack();
       }},
@@ -133,9 +136,9 @@ export default function MedicineInsightScreen({ route, navigation }: any) {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><Text style={styles.backText}>← Back</Text></TouchableOpacity>
-        <Text style={styles.headerTitle}>Medicine Insights</Text>
-        <TouchableOpacity onPress={handleStop} style={styles.stopBtn}><Text style={styles.stopText}>⏹️ Stop</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><Text style={styles.backText}>← {t('back', { defaultValue: 'Back' })}</Text></TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('medicine_insights', { defaultValue: 'Medicine Insights' })}</Text>
+        <TouchableOpacity onPress={handleStop} style={styles.stopBtn}><Text style={styles.stopText}>⏹️ {t('stop', { defaultValue: 'Stop' })}</Text></TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -147,8 +150,8 @@ export default function MedicineInsightScreen({ route, navigation }: any) {
         <View style={styles.feedbackCard}>
           <View style={[styles.feedbackEmojiBg, { backgroundColor: stats.feedback.color + '20' }]}><Text style={styles.feedbackEmoji}>{stats.feedback.emoji}</Text></View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.feedbackTitle, { color: stats.feedback.color }]}>{stats.feedback.title}</Text>
-            <Text style={styles.feedbackBody}>{stats.feedback.body}</Text>
+            <TranslatedText style={[styles.feedbackTitle, { color: stats.feedback.color }]}>{stats.feedback.title}</TranslatedText>
+            <TranslatedText style={styles.feedbackBody}>{stats.feedback.body}</TranslatedText>
           </View>
         </View>
 
@@ -162,17 +165,17 @@ export default function MedicineInsightScreen({ route, navigation }: any) {
           </View>
           {renderGrid()}
           <View style={styles.legend}>
-            <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: colors.success }]} /><Text style={styles.legendText}>Taken</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: colors.danger }]} /><Text style={styles.legendText}>Skipped</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: '#E5E7EB' }]} /><Text style={styles.legendText}>Missed</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: '#F3F4F6' }]} /><Text style={styles.legendText}>Upcoming</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: colors.success }]} /><Text style={styles.legendText}>{t('taken', { defaultValue: 'Taken' })}</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: colors.danger }]} /><Text style={styles.legendText}>{t('skipped', { defaultValue: 'Skipped' })}</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: '#E5E7EB' }]} /><Text style={styles.legendText}>{t('missed', { defaultValue: 'Missed' })}</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: '#F3F4F6' }]} /><Text style={styles.legendText}>{t('upcoming', { defaultValue: 'Upcoming' })}</Text></View>
           </View>
         </View>
 
         <View style={styles.statsRow}>
-          <View style={styles.statBox}><Text style={styles.statValue}>{stats.taken}</Text><Text style={styles.statLabel}>Taken</Text></View>
-          <View style={styles.statBox}><Text style={styles.statValue}>{stats.score.toFixed(0)}%</Text><Text style={styles.statLabel}>Score</Text></View>
-          <View style={styles.statBox}><Text style={styles.statValue}>{stats.missed + stats.skipped}</Text><Text style={styles.statLabel}>Missed</Text></View>
+          <View style={styles.statBox}><Text style={styles.statValue}>{stats.taken}</Text><Text style={styles.statLabel}>{t('taken', { defaultValue: 'Taken' })}</Text></View>
+          <View style={styles.statBox}><Text style={styles.statValue}>{stats.score.toFixed(0)}%</Text><Text style={styles.statLabel}>{t('score', { defaultValue: 'Score' })}</Text></View>
+          <View style={styles.statBox}><Text style={styles.statValue}>{stats.missed + stats.skipped}</Text><Text style={styles.statLabel}>{t('missed', { defaultValue: 'Missed' })}</Text></View>
         </View>
       </ScrollView>
     </SafeAreaView>

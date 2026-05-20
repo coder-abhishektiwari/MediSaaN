@@ -12,7 +12,7 @@ const CONDITIONS = ['Diabetes', 'BP', 'Heart Disease', 'Thyroid', 'Kidney', 'Ast
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
 
 export default function ProfileSetupScreen({ navigation }: any) {
-  const { setPatient } = usePatientStore();
+  const { patient, setPatient } = usePatientStore();
   const { t } = useTranslation();
   const [step, setStep] = useState(1);
 
@@ -22,17 +22,17 @@ export default function ProfileSetupScreen({ navigation }: any) {
     { key: 'other', label: `🧑 ${t('other')}` },
   ];
 
-  const [name, setName]         = useState('');
-  const [age, setAge]           = useState('');
-  const [gender, setGender]     = useState<'male'|'female'|'other'>('male');
-  const [city, setCity]         = useState('');
-  const [bloodGroup, setBG]     = useState('Unknown');
-  const [conditions, setConds]  = useState<string[]>([]);
-  const [allergies, setAllergy] = useState('');
-  const [caregiverName, setCN]  = useState('');
-  const [caregiverPhone, setCP] = useState('');
-  const [doctorName, setDN]     = useState('');
-  const [doctorPhone, setDP]    = useState('');
+  const [name, setName]         = useState(patient?.name || '');
+  const [age, setAge]           = useState(patient?.age ? String(patient.age) : '');
+  const [gender, setGender]     = useState<'male'|'female'|'other'>(patient?.gender || 'male');
+  const [city, setCity]         = useState(patient?.city || '');
+  const [bloodGroup, setBG]     = useState(patient?.blood_group || 'Unknown');
+  const [conditions, setConds]  = useState<string[]>(patient?.conditions || []);
+  const [allergies, setAllergy] = useState(patient?.allergies || '');
+  const [caregiverName, setCN]  = useState(patient?.caregiver_name || '');
+  const [caregiverPhone, setCP] = useState(patient?.caregiver_phone || '');
+  const [doctorName, setDN]     = useState(patient?.doctor_name || '');
+  const [doctorPhone, setDP]    = useState(patient?.doctor_phone || '');
 
   const toggleCond = (c: string) =>
     setConds(p => p.includes(c) ? p.filter(x => x !== c) : [...p, c]);
@@ -46,7 +46,8 @@ export default function ProfileSetupScreen({ navigation }: any) {
   };
 
   const save = () => {
-    const patient: Patient = {
+    const updatedPatient: Patient = {
+      id: patient?.id,
       name: name.trim(), age: parseInt(age) || 0, gender,
       city: city.trim(), blood_group: bloodGroup, conditions,
       allergies: allergies.trim(), caregiver_name: caregiverName.trim(),
@@ -54,18 +55,30 @@ export default function ProfileSetupScreen({ navigation }: any) {
       doctor_phone: doctorPhone.trim(),
     };
     try {
-      db.execute(
-        `INSERT INTO patients (name,age,gender,city,blood_group,conditions,allergies,caregiver_name,caregiver_phone,doctor_name,doctor_phone)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-        [patient.name, patient.age, patient.gender, patient.city, patient.blood_group,
-         JSON.stringify(patient.conditions), patient.allergies,
-         patient.caregiver_name, patient.caregiver_phone, patient.doctor_name, patient.doctor_phone]
-      );
-      const res = db.execute('SELECT id FROM patients ORDER BY id DESC LIMIT 1');
-      patient.id = res.rows?._array[0]?.id;
+      if (patient?.id) {
+        db.execute(
+          `UPDATE patients SET name=?, age=?, gender=?, city=?, blood_group=?, conditions=?, allergies=?, caregiver_name=?, caregiver_phone=?, doctor_name=?, doctor_phone=? WHERE id=?`,
+          [updatedPatient.name, updatedPatient.age, updatedPatient.gender, updatedPatient.city, updatedPatient.blood_group,
+           JSON.stringify(updatedPatient.conditions), updatedPatient.allergies,
+           updatedPatient.caregiver_name, updatedPatient.caregiver_phone, updatedPatient.doctor_name, updatedPatient.doctor_phone, patient.id]
+        );
+      } else {
+        const res = db.execute(
+          `INSERT INTO patients (name,age,gender,city,blood_group,conditions,allergies,caregiver_name,caregiver_phone,doctor_name,doctor_phone)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+          [updatedPatient.name, updatedPatient.age, updatedPatient.gender, updatedPatient.city, updatedPatient.blood_group,
+           JSON.stringify(updatedPatient.conditions), updatedPatient.allergies,
+           updatedPatient.caregiver_name, updatedPatient.caregiver_phone, updatedPatient.doctor_name, updatedPatient.doctor_phone]
+        );
+        updatedPatient.id = res.insertId;
+      }
     } catch (e) { console.warn('Patient save error:', e); }
-    setPatient(patient);
-    navigation.replace('Main');
+    setPatient(updatedPatient);
+    if (patient?.id) {
+      navigation.goBack();
+    } else {
+      navigation.replace('Main');
+    }
   };
 
   const stepLabels = [t('step_basic'), t('step_health'), t('step_emergency')];
@@ -123,7 +136,9 @@ export default function ProfileSetupScreen({ navigation }: any) {
             {CONDITIONS.map(c => (
               <TouchableOpacity key={c} style={[styles.condChip, conditions.includes(c) && styles.condChipActive]}
                 onPress={() => toggleCond(c)}>
-                <Text style={[styles.condChipText, conditions.includes(c) && styles.condChipTextActive]}>{c}</Text>
+                <Text style={[styles.condChipText, conditions.includes(c) && styles.condChipTextActive]}>
+                  {t('cond_' + c.toLowerCase().replace(/ /g, '_'), { defaultValue: c })}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
