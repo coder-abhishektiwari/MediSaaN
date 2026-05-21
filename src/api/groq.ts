@@ -15,6 +15,7 @@ export interface MedicineAdherence {
   adherencePercent: number;
   lastTaken: string | null;
   streak: number;
+  startDate?: string;
 }
 
 interface PatientContext {
@@ -116,14 +117,66 @@ function detectTier(message: string): Tier {
 
 function buildPatientBlock(ctx: PatientContext): string {
   const adherenceBlock = ctx.adherence?.length
-    ? '\nMedicine Adherence (last 30 days):\n' +
-      ctx.adherence.map(a =>
+  ? '\nMedicine Adherence:\n' +
+    ctx.adherence.map(a => {
+
+      // No start date available
+      if (!a.startDate) {
+        return `  • ${a.medicineName}: Adherence tracking data is incomplete.`;
+      }
+
+      const startDate = new Date(a.startDate);
+      const now = new Date();
+
+      // Invalid date safety
+      if (isNaN(startDate.getTime())) {
+        return `  • ${a.medicineName}: Invalid medicine start date.`;
+      }
+
+      const diffDays = Math.floor(
+        (now.getTime() - startDate.getTime()) /
+        (1000 * 60 * 60 * 24)
+      );
+
+      // Medicine course not started yet
+      if (diffDays < 0) {
+        return `  • ${a.medicineName}: Medicine course has not started yet.`;
+      }
+
+      // Newly started medicine
+      if (diffDays < 3) {
+        return `  • ${a.medicineName}: Adherence tracking has just started (${diffDays} day${diffDays !== 1 ? 's' : ''}).`;
+      }
+
+      // Initial tracking phase
+      if (diffDays < 7) {
+        return `  • ${a.medicineName}: Initial adherence tracking is in progress (${a.adherencePercent}% adherence so far).`;
+      }
+
+      // Proper adherence analysis
+      let status = '';
+
+      if (a.adherencePercent >= 90) {
+        status = 'Patient is taking the medicine consistently.';
+      } else if (a.adherencePercent >= 70) {
+        status = 'Patient may be missing some doses.';
+      } else {
+        status = 'Patient is not taking the medicine regularly.';
+      }
+
+      return (
         `  • ${a.medicineName}: ${a.takenDoses}/${a.totalDoses} taken` +
-        ` (${a.adherencePercent}%) | skipped: ${a.skippedDoses} | missed: ${a.missedDoses}` +
+        ` (${a.adherencePercent}%)` +
+        ` | skipped: ${a.skippedDoses}` +
+        ` | missed: ${a.missedDoses}` +
         ` | current streak: ${a.streak} days` +
-        (a.lastTaken ? ` | last taken: ${a.lastTaken}` : ' | never taken')
-      ).join('\n')
-    : '';
+        (a.lastTaken
+          ? ` | last taken: ${a.lastTaken}`
+          : ' | never taken') +
+        `\n    → ${status}`
+      );
+    }).join('\n')
+  : '';
 
   return `--- PATIENT PROFILE ---
 Name: ${ctx.name} | Age: ${ctx.age}y | Gender: ${ctx.gender} | City: ${ctx.city}

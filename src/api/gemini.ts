@@ -77,7 +77,7 @@ async function callGeminiText(prompt: string): Promise<any> {
     {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.4,
+        temperature: 0.2,
         maxOutputTokens: 2048,
         responseMimeType: 'application/json',
       },
@@ -137,7 +137,7 @@ async function callGroqText(prompt: string): Promise<any> {
     {
       model: GROQ_TEXT_MODEL,
       max_tokens: 2048,
-      temperature: 0.4,
+      temperature: 0.2,
       response_format: { type: 'json_object' },
       messages: [{
         role: 'user',
@@ -214,7 +214,24 @@ If not medicine-related:
 }
 
 export async function scanMedicine(base64Image: string, patientContext: any) {
-  const prompt = `You are a medical assistant for Indian patients.
+  const prompt = `You are MediSaaN AI, a smart but simple health companion for ordinary Indian people.
+
+Think deeply like an experienced doctor internally,
+but explain medicines in very simple everyday English.
+
+Most users are not medically educated.
+Some users may have very little education.
+
+IMPORTANT:
+- Explain in simple words only
+- Keep sentences short
+- Never sound like a hospital report
+- Avoid difficult medical terms
+- Explain what the medicine actually does in real life
+- Explain dangers in a calm simple way
+- Patient should understand without Google
+- If a normal Indian family member cannot easily understand the sentence, rewrite it simpler.
+
 Decide whether the image clearly shows a medicine, strip, bottle, tablet, capsule, injection, syrup, or medicine packaging.
 If it is NOT medicine-related, do not guess a medicine name.
 
@@ -264,7 +281,22 @@ If not a medical report:
 }
 
 export async function analyzeReport(base64Images: string[], patientContext: any) {
-  const prompt = `You are a medical assistant for Indian patients.
+  const prompt = `You are MediSaaN AI, a deeply knowledgeable but very simple health companion.
+
+Think deeply like an experienced doctor internally,
+but explain reports like a caring family member.
+
+Most users are not medically educated.
+
+IMPORTANT:
+- Use plain everyday English only
+- Keep explanations short and clear
+- Explain what the report means in real life
+- Explain whether something is serious or not
+- Give practical advice normal people can follow
+- Never sound robotic or overly medical
+- Patient should understand without needing Google
+- If a normal Indian family member cannot easily understand the sentence, rewrite it simpler.
 Decide whether the image shows a health/medical report, lab report, prescription, X-ray, ECG, or diagnostic document.
 If NOT a medical report, do not guess values.
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, useLayoutEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
   SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Animated,
@@ -521,10 +521,8 @@ function ChatHistoryModal({ visible, onClose, sessions, onSelectSession, onNewCh
               <View key={session.id} style={chm.sessionItem}>
                 <TouchableOpacity
                   style={chm.sessionContent}
-                  onPress={() => {
-                    onSelectSession(session.id);
-                    onClose();
-                  }}
+                  onPress={() => onSelectSession(session.id)}
+                  activeOpacity={0.7}
                 >
                   <View style={chm.sessionInfo}>
                     <Text style={chm.sessionDate}>
@@ -693,7 +691,7 @@ export default function ChatScreen({ navigation }: any) {
   const { language, locale } = useLanguageStore();
   const { isVoiceModeActive, setVoiceModeActive } = useVoiceStore();
 
-  const lc = {
+  const lc = useMemo(() => ({
     welcome: (name?: string) => t('chat_welcome', { name: name || patient?.name || t('chat_default_user') }),
     quickPrompts: QUICK_PROMPTS.map(prompt => ({
       id: prompt.id,
@@ -707,7 +705,7 @@ export default function ChatScreen({ navigation }: any) {
     tapToSpeak: t('chat_tap_to_speak'),
     interruptLabel: t('chat_interrupt_label'),
     speakingLabel: t('chat_speaking_label'),
-  };
+  }), [patient?.name, t]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -719,6 +717,7 @@ export default function ChatScreen({ navigation }: any) {
   const [apiPromptVisible, setApiPromptVisible] = useState(false);
   const [chatSessions, setChatSessions] = useState<ChatHistoryItem[]>([]);
   const listRef = useRef<FlatList>(null);
+  const isInitialLoadRef = useRef(false);
 
   // Load chat history
   const loadChatHistory = useCallback(() => {
@@ -728,11 +727,43 @@ export default function ChatScreen({ navigation }: any) {
   }, [patient?.id]);
 
   // Load specific session
-  const loadSession = useCallback((sid: number) => {
-    const stored = getMessages(sid).map((m: any) => ({
+  const loadSession = useCallback((sid: number | null) => {
+    console.log('[ChatScreen] loadSession called with sid:', sid);
+    setMessages([]);
+    setSessionId(null);
+    isInitialLoadRef.current = true;
+
+    if (!sid) {
+      // safety: no session id provided
+      console.warn('[ChatScreen] loadSession: sid is null/undefined');
+      const welcome: ChatMessage = {
+        id: 'welcome', role: 'assistant',
+        content: lc.welcome(patient?.name || 'User'),
+        time: dayjs().format('hh:mm A'),
+      };
+      setMessages([welcome]);
+      loadChatHistory();
+      return;
+    }
+
+    const numericSid = typeof sid === 'number' ? sid : Number(sid);
+    if (!numericSid) {
+      console.warn('[ChatScreen] loadSession: invalid numeric sid', sid);
+      const welcome: ChatMessage = {
+        id: 'welcome', role: 'assistant',
+        content: lc.welcome(patient?.name || 'User'),
+        time: dayjs().format('hh:mm A'),
+      };
+      setMessages([welcome]);
+      loadChatHistory();
+      return;
+    }
+
+    const stored = getMessages(numericSid).map((m: any) => ({
       id: String(m.id), role: m.role, content: m.content,
       time: dayjs(m.created_at).format('hh:mm A'),
     }));
+    console.log('[ChatScreen] loadSession loaded', stored.length, 'messages from db for session', numericSid);
     if (stored.length === 0) {
       const welcome: ChatMessage = {
         id: 'welcome', role: 'assistant',
@@ -743,14 +774,24 @@ export default function ChatScreen({ navigation }: any) {
     } else {
       setMessages(stored);
     }
-    setSessionId(sid);
+    setSessionId(numericSid);
     loadChatHistory();
   }, [patient?.name, lc, loadChatHistory]);
+
+  const handleSelectHistorySession = useCallback((sid: number) => {
+    setHistoryModalVisible(false);
+    loadSession(sid);
+  }, [loadSession]);
 
   // Create new chat
   const startNewChat = useCallback(() => {
     if (!patient?.id) return;
+    isInitialLoadRef.current = true;
     const sid = createSession(patient.id);
+    if (!sid) {
+      console.warn('createSession returned no id');
+      return;
+    }
     loadSession(sid);
   }, [patient?.id, loadSession]);
 
@@ -777,16 +818,40 @@ export default function ChatScreen({ navigation }: any) {
 
   useEffect(() => {
     if (!patient?.id) return;
-
+    console.log('[ChatScreen] Init: loading chat for patient', patient.id);
+    isInitialLoadRef.current = true;
     let sid = getLastSession(patient.id);
-    if (!sid) sid = createSession(patient.id);
+    if (!sid) {
+      console.log('[ChatScreen] Init: no last session, creating new one');
+      sid = createSession(patient.id);
+    }
+    if (!sid) {
+      console.warn('No chat session available for patient', patient.id);
+      return;
+    }
+    console.log('[ChatScreen] Init: loading session', sid);
     loadSession(sid);
     loadChatHistory();
     return () => STTService.destroy();
   }, [patient?.id, language, loadSession, loadChatHistory]);
 
-  const scrollToEnd = () =>
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+  const scrollToEnd = useCallback(() => {
+    listRef.current?.scrollToEnd({ animated: true });
+  }, []);
+
+  // Scroll to bottom immediately on load (no animation), then smooth scroll for new messages
+  useLayoutEffect(() => {
+    if (messages.length > 0) {
+      if (isInitialLoadRef.current) {
+        // Initial load: scroll without animation to avoid visible jerk
+        listRef.current?.scrollToEnd({ animated: false });
+        isInitialLoadRef.current = false;
+      } else {
+        // New message: smooth animated scroll
+        listRef.current?.scrollToEnd({ animated: true });
+      }
+    }
+  }, [messages.length]);
 
   const ensureApiKeys = useCallback(() => {
     if (!ApiKeyService.hasApiKeys()) {
@@ -800,14 +865,17 @@ export default function ChatScreen({ navigation }: any) {
     const trimmed = text.trim();
     if (!trimmed || !patient || loading) return null;
     if (!ensureApiKeys()) return null;
+    if (!sessionId) {
+      console.warn('[Chat] sendMessage: no session id available', { sessionId, patientId: patient?.id });
+      return null;
+    }
     setInput('');
     const userMsg: ChatMessage = {
       id: Date.now().toString(), role: 'user',
       content: trimmed, time: dayjs().format('hh:mm A'),
     };
     setMessages(prev => [...prev, userMsg]);
-    if (sessionId) saveMessage(sessionId, 'user', trimmed);
-    scrollToEnd();
+    saveMessage(sessionId, 'user', trimmed);
     setLoading(true);
     try {
       let ctx = buildPatientContext(patient, language);
@@ -818,8 +886,7 @@ export default function ChatScreen({ navigation }: any) {
         content: reply, time: dayjs().format('hh:mm A'),
       };
       setMessages(prev => [...prev, botMsg]);
-      if (sessionId) saveMessage(sessionId, 'assistant', reply);
-      scrollToEnd();
+      saveMessage(sessionId, 'assistant', reply);
       return reply;
     } catch {
       const errMsg: ChatMessage = {
@@ -936,23 +1003,19 @@ export default function ChatScreen({ navigation }: any) {
         <FlatList
           ref={listRef}
           data={messages}
-          keyExtractor={m => m.id.toString()} // Ensure string conversion for faster lookup
-          renderItem={renderItem} // Use a memoized/stable function reference instead of inline arrow function
+          keyExtractor={m => m.id.toString()}
+          renderItem={renderItem}
           ListFooterComponent={loading ? <TypingIndicator /> : null}
           contentContainerStyle={styles.messageList}
-          onContentSizeChange={scrollToEnd}
+          scrollEnabled={true}
+          scrollEventThrottle={16}
 
-          // --- Performance Booster Props ---
-          initialNumToRender={15} // Starting render items count
-          maxToRenderPerBatch={10} // Incremental updates size per batch
-          windowSize={11} // Limits off-screen pre-rendering window size (saves huge RAM)
-          removeClippedSubviews={Platform.OS === 'android'} // Android par memory leak aur lag bilkul khatam kar dega
-          updateCellsBatchingPeriod={50} // 50ms delay between batch rendering for smooth UI thread operations
-
-          // Optional: Agar chat bubble ki approximate height 90-100 ke aas-paas hai to layout pre-calculation bypass karo
-          getItemLayout={(data, index) => (
-            { length: 90, offset: 90 * index, index }
-          )}
+          // --- Performance Props ---
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={11}
+          removeClippedSubviews={Platform.OS === 'android'}
+          updateCellsBatchingPeriod={50}
         />
 
         {/* Text input row */}
@@ -1006,7 +1069,7 @@ export default function ChatScreen({ navigation }: any) {
         visible={historyModalVisible}
         onClose={() => setHistoryModalVisible(false)}
         sessions={chatSessions}
-        onSelectSession={loadSession}
+        onSelectSession={handleSelectHistorySession}
         onNewChat={startNewChat}
         onDeleteSession={handleDeleteChat}
       />
