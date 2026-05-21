@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
   SafeAreaView, StatusBar, KeyboardAvoidingView, Platform, Animated,
-  Modal, Easing,
+  Modal, Easing, Alert, ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
@@ -10,10 +10,11 @@ import { usePatientStore } from '../store/patientStore';
 import { useLanguageStore } from '../store/languageStore';
 import { useVoiceStore } from '../store/voiceStore';
 import { chatWithBot } from '../api/groq';
+import { ApiKeyService } from '../services/ApiKeyService';
 import { buildPatientContext } from '../utils/promptBuilder';
 import { TTSService } from '../services/TTSService';
 import { STTService } from '../services/STTService';
-import { createSession, saveMessage, getMessages, getLastSession } from '../db/queries/chat';
+import { createSession, saveMessage, getMessages, getLastSession, getAllSessions, deleteSession } from '../db/queries/chat';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import dayjs from 'dayjs';
 
@@ -219,10 +220,10 @@ function VoiceModal({ visible, onClose, onSend, language: _language, locale, pat
   const isSpeaking = useRef(false);
 
   useEffect(() => {
-    STTService.onSpeechStart          = () => setVoiceState('listening');
-    STTService.onSpeechEnd            = () => setVoiceState('processing');
-    STTService.onSpeechError          = () => setVoiceState('idle');
-    STTService.onSpeechResults        = async (e: any) => {
+    STTService.onSpeechStart = () => setVoiceState('listening');
+    STTService.onSpeechEnd = () => setVoiceState('processing');
+    STTService.onSpeechError = () => setVoiceState('idle');
+    STTService.onSpeechResults = async (e: any) => {
       const text = e.value?.[0] ?? '';
       if (!text) { setVoiceState('idle'); return; }
       setTranscript(text);
@@ -239,12 +240,12 @@ function VoiceModal({ visible, onClose, onSend, language: _language, locale, pat
 
     return () => {
       try {
-        STTService.onSpeechStart          = () => {};
-        STTService.onSpeechEnd            = () => {};
-        STTService.onSpeechError          = () => {};
-        STTService.onSpeechResults        = () => {};
+        STTService.onSpeechStart = () => { };
+        STTService.onSpeechEnd = () => { };
+        STTService.onSpeechError = () => { };
+        STTService.onSpeechResults = () => { };
         STTService.stop();
-      } catch {}
+      } catch { }
     };
   }, [onSend]);
 
@@ -479,6 +480,212 @@ const vm = StyleSheet.create({
   overlay: {}, sheet: {}, handle: {}, botLabel: {}, patientLabel: {}, orbWrap: {},
 });
 
+// ─── Chat History Modal ───────────────────────────────────────────────────────
+interface ChatHistoryItem {
+  id: number;
+  started_at: string;
+  first_message?: string;
+  message_count: number;
+}
+
+interface ChatHistoryModalProps {
+  visible: boolean;
+  onClose: () => void;
+  sessions: ChatHistoryItem[];
+  onSelectSession: (sessionId: number) => void;
+  onNewChat: () => void;
+  onDeleteSession: (sessionId: number) => void;
+}
+
+function ChatHistoryModal({ visible, onClose, sessions, onSelectSession, onNewChat, onDeleteSession }: ChatHistoryModalProps) {
+  const { t } = useTranslation();
+  
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={chm.safe}>
+        <View style={chm.header}>
+          <Text style={chm.title}>{t('chat_history', { defaultValue: 'Chat History' })}</Text>
+          <TouchableOpacity onPress={onClose} style={chm.closeBtn}>
+            <Icon name="close" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+
+        {sessions.length === 0 ? (
+          <View style={chm.emptyState}>
+            <Icon name="chat-outline" size={48} color={colors.border} />
+            <Text style={chm.emptyText}>{t('no_chats', { defaultValue: 'No chat history yet' })}</Text>
+          </View>
+        ) : (
+          <ScrollView contentContainerStyle={chm.list}>
+            {sessions.map((session) => (
+              <View key={session.id} style={chm.sessionItem}>
+                <TouchableOpacity
+                  style={chm.sessionContent}
+                  onPress={() => {
+                    onSelectSession(session.id);
+                    onClose();
+                  }}
+                >
+                  <View style={chm.sessionInfo}>
+                    <Text style={chm.sessionDate}>
+                      {dayjs(session.started_at).format('MMM DD, YYYY · hh:mm A')}
+                    </Text>
+                    <Text style={chm.sessionPreview} numberOfLines={2}>
+                      {session.first_message || t('no_messages', { defaultValue: 'No messages' })}
+                    </Text>
+                    <Text style={chm.messageCount}>
+                      {t('messages', { defaultValue: 'Messages' })}: {session.message_count}
+                    </Text>
+                  </View>
+                  <Icon name="chevron-right" size={20} color={colors.textMuted} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={chm.deleteBtn}
+                  onPress={() => {
+                    Alert.alert(
+                      t('delete_chat', { defaultValue: 'Delete Chat' }),
+                      t('delete_chat_confirm', { defaultValue: 'Are you sure?' }),
+                      [
+                        { text: t('cancel', { defaultValue: 'Cancel' }), onPress: () => { } },
+                        {
+                          text: t('delete', { defaultValue: 'Delete' }),
+                          onPress: () => onDeleteSession(session.id),
+                          style: 'destructive',
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Icon name="trash-can-outline" size={18} color={colors.warning} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        <TouchableOpacity
+          style={chm.newChatBtn}
+          onPress={() => {
+            onNewChat();
+            onClose();
+          }}
+        >
+          <Icon name="plus" size={20} color="#fff" />
+          <Text style={chm.newChatBtnText}>{t('new_chat', { defaultValue: 'New Chat' })}</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+function ApiKeyPromptModal({ visible, onClose, onSetup }: { visible: boolean; onClose: () => void; onSetup: () => void; }) {
+  const { t } = useTranslation();
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={apiModal.overlay}>
+        <View style={apiModal.card}>
+          <Icon name="shield-key-outline" size={32} color={colors.primaryDark} />
+          <Text style={apiModal.title}>{t('api_prompt_title', { defaultValue: 'API keys needed for chat' })}</Text>
+          <Text style={apiModal.subtitle}>{t('api_prompt_subtitle', { defaultValue: 'Set up your Gemini and Groq keys to use AI chat and voice features.' })}</Text>
+          <TouchableOpacity style={apiModal.actionBtn} onPress={onSetup}>
+            <Text style={apiModal.actionText}>{t('setup_api_keys', { defaultValue: 'Setup API Keys' })}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={apiModal.linkBtn} onPress={onClose}>
+            <Text style={apiModal.linkText}>{t('maybe_later', { defaultValue: 'Maybe later' })}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const apiModal = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  title: { ...typography.headingSmall, color: colors.textPrimary, textAlign: 'center' },
+  subtitle: { ...typography.bodyMedium, color: colors.textSecondary, textAlign: 'center', lineHeight: 20, marginTop: spacing.sm },
+  actionBtn: { width: '100%', backgroundColor: colors.primaryDark, borderRadius: borderRadius.lg, paddingVertical: spacing.md, marginTop: spacing.lg, alignItems: 'center' },
+  actionText: { color: '#fff', ...typography.bodyMedium, fontWeight: '700' },
+  linkBtn: { marginTop: spacing.sm },
+  linkText: { color: colors.primaryDark, ...typography.labelMedium },
+});
+
+const chm = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  title: { ...typography.headingSmall, color: colors.textPrimary, flex: 1 },
+  closeBtn: { padding: spacing.sm },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  emptyText: { ...typography.bodyMedium, color: colors.textMuted },
+  list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.md },
+  sessionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  sessionContent: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sessionInfo: { flex: 1, gap: spacing.xs },
+  sessionDate: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
+  sessionPreview: { ...typography.bodyMedium, color: colors.textPrimary, lineHeight: 20 },
+  messageCount: { ...typography.tiny, color: colors.textMuted },
+  deleteBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.md },
+  newChatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.primaryDark,
+    borderRadius: borderRadius.lg,
+  },
+  newChatBtnText: { ...typography.bodyMedium, color: '#fff', fontWeight: '700' },
+});
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ChatScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -508,18 +715,20 @@ export default function ChatScreen({ navigation }: any) {
   const [isListening, setIsListening] = useState(false);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [voiceModalVisible, setVoiceModalVisible] = useState(isVoiceModeActive);
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [apiPromptVisible, setApiPromptVisible] = useState(false);
+  const [chatSessions, setChatSessions] = useState<ChatHistoryItem[]>([]);
   const listRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    setVoiceModalVisible(isVoiceModeActive);
-  }, [isVoiceModeActive]);
-
-  useEffect(() => {
+  // Load chat history
+  const loadChatHistory = useCallback(() => {
     if (!patient?.id) return;
+    const sessions = getAllSessions(patient.id);
+    setChatSessions(sessions);
+  }, [patient?.id]);
 
-    let sid = getLastSession(patient.id);
-    if (!sid) sid = createSession(patient.id);
-    setSessionId(sid);
+  // Load specific session
+  const loadSession = useCallback((sid: number) => {
     const stored = getMessages(sid).map((m: any) => ({
       id: String(m.id), role: m.role, content: m.content,
       time: dayjs(m.created_at).format('hh:mm A'),
@@ -527,23 +736,70 @@ export default function ChatScreen({ navigation }: any) {
     if (stored.length === 0) {
       const welcome: ChatMessage = {
         id: 'welcome', role: 'assistant',
-        content: lc.welcome(patient.name || 'User'),
+        content: lc.welcome(patient?.name || 'User'),
         time: dayjs().format('hh:mm A'),
       };
       setMessages([welcome]);
-      // ✅ NO auto TTS here — user controls playback via 🔊 button
     } else {
       setMessages(stored);
     }
+    setSessionId(sid);
+    loadChatHistory();
+  }, [patient?.name, lc, loadChatHistory]);
+
+  // Create new chat
+  const startNewChat = useCallback(() => {
+    if (!patient?.id) return;
+    const sid = createSession(patient.id);
+    loadSession(sid);
+  }, [patient?.id, loadSession]);
+
+  // Delete chat
+  const handleDeleteChat = useCallback((sid: number) => {
+    deleteSession(sid);
+    if (sid === sessionId) {
+      // If current session is deleted, create new one
+      startNewChat();
+    } else {
+      loadChatHistory();
+    }
+  }, [sessionId, startNewChat, loadChatHistory]);
+
+  useEffect(() => {
+    setVoiceModalVisible(isVoiceModeActive);
+  }, [isVoiceModeActive]);
+
+  useEffect(() => {
+    if (!ApiKeyService.hasApiKeys()) {
+      setApiPromptVisible(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!patient?.id) return;
+
+    let sid = getLastSession(patient.id);
+    if (!sid) sid = createSession(patient.id);
+    loadSession(sid);
+    loadChatHistory();
     return () => STTService.destroy();
-  }, [patient?.id, language]);
+  }, [patient?.id, language, loadSession, loadChatHistory]);
 
   const scrollToEnd = () =>
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
 
+  const ensureApiKeys = useCallback(() => {
+    if (!ApiKeyService.hasApiKeys()) {
+      setApiPromptVisible(true);
+      return false;
+    }
+    return true;
+  }, []);
+
   const sendMessage = useCallback(async (text: string, isVoiceMode = false) => {
     const trimmed = text.trim();
     if (!trimmed || !patient || loading) return null;
+    if (!ensureApiKeys()) return null;
     setInput('');
     const userMsg: ChatMessage = {
       id: Date.now().toString(), role: 'user',
@@ -579,6 +835,7 @@ export default function ChatScreen({ navigation }: any) {
   }, [messages, patient, language, sessionId, loading]);
 
   const toggleMic = () => {
+    if (!ensureApiKeys()) return;
     if (isListening) {
       STTService.stop();
       setIsListening(false);
@@ -597,6 +854,10 @@ export default function ChatScreen({ navigation }: any) {
   const handleSpeak = useCallback((text: string) => {
     TTSService.speak(text);
   }, []);
+  const renderItem = useCallback(({ item }: { item: any }) => (
+    <Bubble msg={item} onSpeak={handleSpeak} />
+  ), [handleSpeak]); // Only re-creates if handleSpeak changes
+  
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -604,9 +865,17 @@ export default function ChatScreen({ navigation }: any) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Icon name="arrow-left" size={22} color={colors.primaryDark} />
-        </TouchableOpacity>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Icon name="arrow-left" size={22} color={colors.primaryDark} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.historyBtn}
+            onPress={() => setHistoryModalVisible(true)}
+          >
+            <Icon name="history" size={20} color={colors.primaryDark} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.botInfo}>
           <View style={styles.botAvatar}><Icon name="robot-happy-outline" size={23} color="#fff" /></View>
           <View>
@@ -614,16 +883,25 @@ export default function ChatScreen({ navigation }: any) {
             <Text style={styles.botStatus}>{lc.botStatus}</Text>
           </View>
         </View>
-        {/* Voice mode button in header */}
-        <TouchableOpacity
-          style={styles.voiceModeBtn}
-          onPress={() => {
-            setVoiceModalVisible(true);
-            setVoiceModeActive(true);
-          }}
-        >
-          <Text style={styles.voiceModeBtnText}>{t('voice', { defaultValue: 'Voice' })}</Text>
-        </TouchableOpacity>
+        {/* New chat + Voice buttons */}
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.newChatIconBtn}
+            onPress={startNewChat}
+          >
+            <Icon name="plus" size={20} color={colors.primaryDark} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.voiceModeBtn}
+            onPress={() => {
+              if (!ensureApiKeys()) return;
+              setVoiceModalVisible(true);
+              setVoiceModeActive(true);
+            }}
+          >
+            <Icon name="microphone" size={18} color={colors.primaryDark} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Patient context strip */}
@@ -658,11 +936,23 @@ export default function ChatScreen({ navigation }: any) {
         <FlatList
           ref={listRef}
           data={messages}
-          keyExtractor={m => m.id}
-          renderItem={({ item }) => <Bubble msg={item} onSpeak={handleSpeak} />}
+          keyExtractor={m => m.id.toString()} // Ensure string conversion for faster lookup
+          renderItem={renderItem} // Use a memoized/stable function reference instead of inline arrow function
           ListFooterComponent={loading ? <TypingIndicator /> : null}
           contentContainerStyle={styles.messageList}
           onContentSizeChange={scrollToEnd}
+
+          // --- Performance Booster Props ---
+          initialNumToRender={15} // Starting render items count
+          maxToRenderPerBatch={10} // Incremental updates size per batch
+          windowSize={11} // Limits off-screen pre-rendering window size (saves huge RAM)
+          removeClippedSubviews={Platform.OS === 'android'} // Android par memory leak aur lag bilkul khatam kar dega
+          updateCellsBatchingPeriod={50} // 50ms delay between batch rendering for smooth UI thread operations
+
+          // Optional: Agar chat bubble ki approximate height 90-100 ke aas-paas hai to layout pre-calculation bypass karo
+          getItemLayout={(data, index) => (
+            { length: 90, offset: 90 * index, index }
+          )}
         />
 
         {/* Text input row */}
@@ -710,6 +1000,16 @@ export default function ChatScreen({ navigation }: any) {
         locale={locale}
         patientName={patient?.name ?? ''}
       />
+
+      {/* ── Chat History Modal ── */}
+      <ChatHistoryModal
+        visible={historyModalVisible}
+        onClose={() => setHistoryModalVisible(false)}
+        sessions={chatSessions}
+        onSelectSession={loadSession}
+        onNewChat={startNewChat}
+        onDeleteSession={handleDeleteChat}
+      />
     </SafeAreaView>
   );
 }
@@ -721,18 +1021,16 @@ const styles = StyleSheet.create({
     padding: spacing.lg, backgroundColor: colors.surface,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   backBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primaryLight },
+  historyBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primaryLight },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  newChatIconBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primaryLight },
   botInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   botAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primaryDark, justifyContent: 'center', alignItems: 'center' },
   botName: { ...typography.headingSmall, color: colors.ink },
   botStatus: { ...typography.tiny, color: colors.success },
-  voiceModeBtn: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    backgroundColor: colors.primaryLight,
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5, borderColor: colors.primary,
-  },
-  voiceModeBtnText: { ...typography.caption, color: colors.primaryDark, fontWeight: '800' },
+  voiceModeBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primaryLight },
   contextStrip: { backgroundColor: colors.primaryLight, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
   contextText: { ...typography.caption, color: colors.primaryDark, fontWeight: '700' },
   promptsWrap: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
@@ -746,8 +1044,8 @@ const styles = StyleSheet.create({
   promptText: { ...typography.caption, color: colors.textSecondary },
   messageList: { paddingVertical: spacing.lg, paddingBottom: 8 },
   inputRow: {
-    flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm,
-    padding: spacing.md, paddingBottom: spacing.lg, backgroundColor: colors.surface,
+    flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, borderRadius: spacing.huge, margin: spacing.md,
+    padding: spacing.md, paddingBottom: spacing.lg, backgroundColor: colors.surface, elevation: spacing.md,
     borderTopWidth: 1, borderTopColor: colors.border,
   },
   micBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center' },

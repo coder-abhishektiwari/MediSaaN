@@ -118,6 +118,8 @@
   "privacy": "गोपनीयता",
   "data_local": "तुमची माहिती फक्त तुमच्या डिव्हाइसवर राहते",
   "clear_data": "सर्व डेटा पुसून टाका",
+  "clear_data_message": "यामुळे तुमची सर्व औषधे, अहवाल आणि प्रोफाइल हटवली जातील. हे परत करता येणार नाही.",
+  "clear_everything": "सगळं साफ करा",
   "app_version": "आवृत्ती",
   "offline_cache": "आधी ओळखलेली",
   "refill_alert": "औषध संपत आले आहे: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "पूर्ण यादी पहा →",
   "tool_scan_label": "औषध ओळखा",
   "tool_report_label": "अहवाल समजा",
-  "tool_chat_label": "MediSaaN AI चॅट",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "औषधांचा इतिहास",
   "tool_scan_desc": "फोटोवरून ओळखा",
   "tool_report_desc": "AI विश्लेषण",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "माझी\nऔषधे",
   "tool_scan_medicine": "औषध\nस्कॅन करा",
   "tool_report_analyze": "अहवाल\nविश्लेषण",
-  "tool_chat_bot": "बॉटशी\nचॅट",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "व्हॉइस असिस्टंट",
   "perm_voice_sub": "एआय हेल्थ बॉट व्हॉइस संवादासाठी वापरला जातो.",
   "perm_location": "स्थान प्रवेश",
@@ -329,5 +331,5 @@
   "next_dose": "पुढील डोस",
   "health_score": "आरोग्य स्कोअर",
   "ai_powered": "एआय समर्थित",
-  "voice_hint": "\"हे साथी, माझा अहवाल वाचा\" असे म्हणण्याचा प्रयत्न करा"
+  "voice_hint": "फोन हलवा आणि औषध स्कॅन करा"
 }

@@ -33,6 +33,7 @@ public class MediSaaNNativeModule extends ReactContextBaseJavaModule {
     public static String initialAlarmId = null;
     public static String initialAlarmMedicine = null;
     public static String initialAlarmScheduledTime = null;
+    public static String initialVolumeShortcutAction = null;
     private static ReactApplicationContext reactContext = null;
 
     MediSaaNNativeModule(ReactApplicationContext context) {
@@ -164,6 +165,20 @@ public class MediSaaNNativeModule extends ReactContextBaseJavaModule {
         }
     }
 
+    public static void triggerVolumeShortcutEvent(String action) {
+        initialVolumeShortcutAction = action;
+        if (reactContext != null) {
+            try {
+                WritableMap map = Arguments.createMap();
+                map.putString("action", action);
+                reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                    .emit("onVolumeShortcut", map);
+            } catch (Exception e) {
+                // React Context may not be initialized yet
+            }
+        }
+    }
+
     @ReactMethod
     public void getInitialAlarm(Promise promise) {
         if (initialAlarmId != null) {
@@ -177,6 +192,18 @@ public class MediSaaNNativeModule extends ReactContextBaseJavaModule {
             initialAlarmMedicine = null;
             initialAlarmScheduledTime = null;
 
+            promise.resolve(map);
+        } else {
+            promise.resolve(null);
+        }
+    }
+
+    @ReactMethod
+    public void getInitialVolumeShortcut(Promise promise) {
+        if (initialVolumeShortcutAction != null) {
+            WritableMap map = Arguments.createMap();
+            map.putString("action", initialVolumeShortcutAction);
+            initialVolumeShortcutAction = null;
             promise.resolve(map);
         } else {
             promise.resolve(null);

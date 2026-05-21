@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { navigationRef } from './navigationRef';
@@ -26,6 +26,7 @@ import HistoryDetailScreen from '../screens/HistoryDetailScreen';
 import MedicineInsightScreen from '../screens/MedicineInsightScreen';
 import AlarmScreen from '../screens/AlarmScreen';
 import PermissionScreen from '../screens/PermissionScreen';
+import ApiSetupScreen from '../screens/ApiSetupScreen';
 import StreakHistoryScreen from '../screens/StreakHistoryScreen';
 import FloatingVoiceButton from '../components/FloatingVoiceButton';
 import { PermissionService } from '../services/PermissionService';
@@ -60,6 +61,21 @@ export default function RootNavigator() {
       }
     };
     setup();
+  }, []);
+
+  const handleVolumeShortcut = useCallback((action: string) => {
+    if (!navigationRef.isReady()) {
+      (globalThis as any).pendingVolumeShortcut = action;
+      return;
+    }
+
+    const routeName = action === 'quickScan' ? 'QuickScan' : action === 'reportScan' ? 'ReportScan' : null;
+    if (!routeName) return;
+
+    const currentRoute = navigationRef.getCurrentRoute() as any;
+    if (currentRoute?.name !== routeName) {
+      (navigationRef as any).navigate(routeName as never);
+    }
   }, []);
 
   useEffect(() => {
@@ -97,6 +113,15 @@ export default function RootNavigator() {
       });
     }
 
+    // Handle Native Volume Shortcut Launch (Cold Start)
+    if (MediSaaNNativeModule && MediSaaNNativeModule.getInitialVolumeShortcut) {
+      MediSaaNNativeModule.getInitialVolumeShortcut().then((shortcut: any) => {
+        if (shortcut?.action) {
+          handleVolumeShortcut(shortcut.action);
+        }
+      }).catch(() => {});
+    }
+
     // Listen for Foreground Native Alarm Manager events
     const alarmSubscription = DeviceEventEmitter.addListener(
       'onAlarmTriggered',
@@ -121,6 +146,15 @@ export default function RootNavigator() {
       }
     );
 
+    const volumeSubscription = DeviceEventEmitter.addListener(
+      'onVolumeShortcut',
+      (event: any) => {
+        if (event?.action) {
+          handleVolumeShortcut(event.action);
+        }
+      }
+    );
+
     // Handle foreground notifications (Notifee)
     const notifeeSubscription = notifee.onForegroundEvent(({ type, detail }) => {
       if (type === EventType.PRESS && detail.notification?.data?.type === 'alarm') {
@@ -140,9 +174,10 @@ export default function RootNavigator() {
 
     return () => {
       alarmSubscription.remove();
+      volumeSubscription.remove();
       notifeeSubscription();
     };
-  }, []);
+  }, [handleVolumeShortcut]);
 
   if (!isReady) return null;
 
@@ -155,12 +190,22 @@ export default function RootNavigator() {
     : 'Main';
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        const pendingVolume = (globalThis as any).pendingVolumeShortcut;
+        if (pendingVolume) {
+          handleVolumeShortcut(pendingVolume);
+          (globalThis as any).pendingVolumeShortcut = null;
+        }
+      }}
+    >
       <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="Splash"        component={SplashScreen}       />
         <Stack.Screen name="Permission"    component={PermissionScreen}   />
         <Stack.Screen name="Language"      component={LanguagePickerScreen} options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="ProfileSetup"  component={ProfileSetupScreen}  options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="ApiSetup"      component={ApiSetupScreen}      options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="Main"          component={MainTabNavigator}    />
         <Stack.Screen name="QuickScan"     component={QuickScanScreen}     options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="ReportScan"    component={ReportScanScreen}    options={{ animation: 'slide_from_bottom' }} />

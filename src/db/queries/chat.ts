@@ -18,3 +18,27 @@ export function getLastSession(patientId: number) {
   const res = db.execute('SELECT id FROM chat_sessions WHERE patient_id = ? ORDER BY id DESC LIMIT 1', [patientId]);
   return res.rows?._array[0]?.id;
 }
+
+// ─── New functions for chat history ───────────────────────────────────────────
+
+export function getAllSessions(patientId: number) {
+  const res = db.execute(
+    `SELECT cs.id, cs.started_at,
+      (SELECT content FROM chat_messages WHERE session_id = cs.id AND role = 'user' ORDER BY created_at ASC LIMIT 1) as first_message,
+      (SELECT COUNT(*) FROM chat_messages WHERE session_id = cs.id) as message_count
+     FROM chat_sessions cs WHERE patient_id = ? ORDER BY cs.id DESC`,
+    [patientId]
+  );
+  return res.rows?._array || [];
+}
+
+export function deleteSession(sessionId: number) {
+  // Delete messages first (foreign key constraint)
+  db.execute('DELETE FROM chat_messages WHERE session_id = ?', [sessionId]);
+  // Then delete session
+  db.execute('DELETE FROM chat_sessions WHERE id = ?', [sessionId]);
+}
+
+export function deleteAllMessages(sessionId: number) {
+  db.execute('DELETE FROM chat_messages WHERE session_id = ?', [sessionId]);
+}

@@ -118,6 +118,8 @@
   "privacy": "ਨਿੱਜਤਾ",
   "data_local": "ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ ਸਿਰਫ਼ ਤੁਹਾਡੇ ਫ਼ੋਨ ਵਿੱਚ ਰਹਿੰਦੀ ਹੈ",
   "clear_data": "ਸਾਰਾ ਡਾਟਾ ਮਿਟਾਓ",
+  "clear_data_message": "ਇਸ ਨਾਲ ਤੁਹਾਡੀਆਂ ਸਾਰੀਆਂ ਦਵਾਈਆਂ, ਰਿਪੋਰਟਾਂ ਅਤੇ ਪ੍ਰੋਫਾਈਲ ਹਟ ਜਾਵੇਗੀ। ਇਹ ਵਾਪਸ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ।",
+  "clear_everything": "ਸਭ ਕੁਝ ਸਾਫ ਕਰੋ",
   "app_version": "ਵਰਜ਼ਨ",
   "offline_cache": "ਪਹਿਲਾਂ ਪਛਾਣੀਆਂ ਗਈਆਂ",
   "refill_alert": "ਦਵਾਈ ਖ਼ਤਮ ਹੋਣ ਵਾਲੀ ਹੈ: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "ਪੂਰੀ ਸੂਚੀ ਦੇਖੋ →",
   "tool_scan_label": "ਦਵਾਈ ਪਛਾਣੋ",
   "tool_report_label": "ਰਿਪੋਰਟ ਸਮਝੋ",
-  "tool_chat_label": "MediSaaN AI ਚੈਟ",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "ਦਵਾਈਆਂ ਦਾ ਇਤਿਹਾਸ",
   "tool_scan_desc": "ਫੋਟੋ ਤੋਂ ਪਛਾਣੋ",
   "tool_report_desc": "AI ਵਿਸ਼ਲੇਸ਼ਣ",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "ਮੇਰੀਆਂ\nਦਵਾਈਆਂ",
   "tool_scan_medicine": "ਦਵਾਈ\nਸਕੈਨ",
   "tool_report_analyze": "ਰਿਪੋਰਟ\nਵਿਸ਼ਲੇਸ਼ਣ",
-  "tool_chat_bot": "ਬੋਟ ਨਾਲ\nਗੱलਬਾਤ",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "ਵੌਇਸ ਅਸਿਸਟੈਂਟ",
   "perm_voice_sub": "AI ਹੈਲਥ ਬੋਟ ਵੌਇਸ ਇੰਟਰੈਕਸ਼ਨਾਂ ਲਈ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ।",
   "perm_location": "ਟਿਕਾਣਾ ਪਹੁੰਚ",
@@ -329,5 +331,5 @@
   "next_dose": "ਅਗਲੀ ਖੁਰਾਕ",
   "health_score": "ਸਿਹਤ ਸਕੋਰ",
   "ai_powered": "ਏਆਈ ਸੰਚਾਲਿਤ",
-  "voice_hint": "\"ਹੇ ਸਾਥੀ, ਮੇਰੀ ਰਿਪੋਰਟ ਪੜ੍ਹੋ\" ਕਹਿ ਕੇ ਦੇਖੋ"
+  "voice_hint": "ਫੋਨ ਹਿਲਾਓ ਅਤੇ ਦਵਾਈ ਸਕੈਨ ਕਰੋ"
 }

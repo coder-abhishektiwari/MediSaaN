@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, sizes, typography, borderRadius } from '../theme';
+import { colors, sizes, typography, borderRadius, spacing } from '../theme';
 
 import HomeScreen from '../screens/HomeScreen';
 import MedicineListScreen from '../screens/MedicineListScreen';
@@ -44,7 +44,7 @@ export default function MainTabNavigator() {
     >
       <Tab.Screen name="Home"      component={HomeScreen}         options={{ tabBarLabel: 'Home' }} />
       <Tab.Screen name="Medicines" component={MedicineListScreen} options={{ tabBarLabel: 'Medicines' }} />
-      <Tab.Screen name="Chat"      component={ChatScreen}         options={{ tabBarLabel: 'AI Chat' }} />
+      <Tab.Screen name="Chat"      component={ChatScreen}         options={{ tabBarLabel: 'AI Chat' ,tabBarStyle: { display: 'none' } }} />
       <Tab.Screen name="Profile"   component={SettingsScreen}     options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );
@@ -59,6 +59,7 @@ const styles = StyleSheet.create({
     height: sizes.tabBarHeight + 4,
     paddingBottom: 9,
     paddingTop: 8,
+    marginHorizontal: spacing.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,

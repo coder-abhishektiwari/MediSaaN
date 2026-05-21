@@ -1,6 +1,6 @@
 import { Patient } from '../store/patientStore';
-import { LANGUAGE_NAMES, LANGUAGES } from '../store/languageStore';
-import { getMedicines } from '../db/queries/medicines';
+import { LANGUAGE_NAMES} from '../store/languageStore';
+import { getMedicines, getMedicineAdherence } from '../db/queries/medicines';
 import { getScanHistory } from '../db/queries/reports';
 
 // Map language codes to native language names (for AI models)
@@ -21,11 +21,15 @@ const NATIVE_LANGUAGE_NAMES: Record<string, string> = {
 
 export function buildPatientContext(patient: Patient, language: string) {
   let medicines: string[] = [];
-  let reports: string[] = [];
+  let reports: string[]   = [];
+  let adherence: any[]    = [];
+
   try {
     if (patient.id) {
       const meds = getMedicines(patient.id);
       medicines = meds.map((m: any) => m.name);
+
+      adherence = getMedicineAdherence(patient.id, 30);
 
       const history = getScanHistory(patient.id);
       reports = history
@@ -47,6 +51,7 @@ export function buildPatientContext(patient: Patient, language: string) {
     city:         patient.city || 'India',
     conditions:   patient.conditions || [],
     medicines,
+    adherence,
     recent_tests: reports.length ? reports.join('; ') : 'None saved',
     allergies:    patient.allergies || 'none',
     language:     language, // language code (e.g., 'hi', 'bn', 'en')

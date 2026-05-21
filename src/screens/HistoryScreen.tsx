@@ -56,43 +56,83 @@ export default function HistoryScreen({ route, navigation }: any) {
     let data: any = {};
     try {
       data = JSON.parse(item.result_json);
-    } catch (e) {}
+    } catch (e) { }
 
     const title = type === 'medicine' ? data.medicine_name : data.report_type;
     const strength = type === 'medicine' ? data.strength : null;
     const sub = type === 'medicine' ? data.simple_description : data.simple_verdict;
-    const date = dayjs(item.created_at).format('DD MMM YYYY, hh:mm A');
-    
+    const date = dayjs(item.created_at).format('DD MMM YYYY • hh:mm A');
+
     const isSaved = type === 'medicine' ? isMyMedicine(data.medicine_name || '') : item.is_saved === 1;
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('HistoryDetail', { item })}
+        activeOpacity={0.85}
       >
-        <Image source={{ uri: item.image_path }} style={styles.thumb} />
+        {/* Left Side: Designer Image Glass Wrapper */}
+        <View style={styles.imageWrapper}>
+          {/* Strict string length check */}
+          {item.image_path && item.image_path.trim().length > 0 ? (
+            <Image source={{ uri: item.image_path }} style={styles.thumb} />
+          ) : (
+            <Text style={{ fontSize: 40 }}>{type === 'medicine' ? '💊' : '📄'}</Text>
+          )}
+
+          {/* Subtle overlay accent icon for micro-designing */}
+          <View style={styles.typeIndicator}>
+            <Text style={{ fontSize: 10 }}>{type === 'medicine' ? '💊' : '📄'}</Text>
+          </View>
+        </View>
+
+        {/* Right Side: Information Matrix */}
         <View style={styles.cardInfo}>
+          {/* Top Info Layout */}
           <View style={styles.cardHeader}>
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.title} numberOfLines={1}>{title || 'Unknown'}</Text>
-              {strength && (
-                <View style={styles.strengthBadge}>
-                  <Text style={styles.strengthText}>{strength}</Text>
-                </View>
-              )}
+            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+              {title || 'Unknown'}
+            </Text>
+
+            {/* {strength && (
+              <View style={styles.strengthBadge}>
+                <Text style={styles.strengthText}>{strength}</Text>
+              </View>
+            )} */}
+          </View>
+
+          {/* Description Section */}
+          <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
+            {sub || 'No description available'}
+          </Text>
+
+          {/* Designer Bottom Footer Line */}
+          <View style={styles.cardFooter}>
+            <View style={styles.dateRow}>
+              <Text style={styles.dateIcon}>🕒</Text>
+              <Text style={styles.date}>{date}</Text>
             </View>
+
             {isSaved && (
-              <View style={[styles.badge, { backgroundColor: type === 'medicine' ? colors.primaryLight : colors.successLight }]}>
-                <Text style={[styles.badgeText, { color: type === 'medicine' ? colors.primary : colors.success }]}>
-                  {type === 'medicine' ? 'My Medicine' : 'My Report'}
+              <View style={[styles.badge, {
+                backgroundColor: type === 'medicine' ? '#EEF2F6' : '#ECFDF5',
+                borderColor: type === 'medicine' ? '#CBD5E1' : '#A7F3D0'
+              }]}>
+                <View style={[styles.badgeDot, { backgroundColor: type === 'medicine' ? colors.primary : colors.success }]} />
+                <Text style={[styles.badgeText, { color: type === 'medicine' ? '#334155' : '#065F46' }]}>
+                  {type === 'medicine' ? 'My Medicine' : 'Saved'}
                 </Text>
               </View>
             )}
           </View>
-          <Text style={styles.subtitle} numberOfLines={2}>{sub || 'No description available'}</Text>
-          <Text style={styles.date}>{date}</Text>
         </View>
-        <Text style={styles.arrow}>›</Text>
+
+        {/* Minimalist Neo-Chevron Indicator */}
+        <View style={styles.arrowContainer}>
+          <View style={styles.arrowCircle}>
+            <Text style={styles.arrow}>➔</Text>
+          </View>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -146,24 +186,155 @@ const styles = StyleSheet.create({
   headerTitle: { ...typography.headingSmall, color: colors.textPrimary },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   list: { padding: spacing.lg, gap: spacing.md },
+  // --- Updated Professional Card Layout Styles ---
+  // --- Modern Designer Aesthetics ---
   card: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.surface, borderRadius: borderRadius.lg,
-    padding: spacing.md, gap: spacing.md,
-    borderWidth: 1, borderColor: colors.border,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20, // Rounded smooth corners
+    padding: 14,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#F1F1F4', // Ultra soft premium border
+    // High-end soft shadow layering
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
-  thumb: { width: 60, height: 60, borderRadius: borderRadius.md, backgroundColor: colors.background },
-  cardInfo: { flex: 1, gap: 4 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  title: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  strengthBadge: { backgroundColor: colors.background, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: colors.border },
-  strengthText: { fontSize: 10, fontWeight: '700', color: colors.primary },
-  subtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 },
-  date: { ...typography.tiny, color: colors.textMuted, marginTop: 2 },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
-  badgeText: { fontSize: 10, fontWeight: '700' },
-  arrow: { fontSize: 24, color: colors.border, fontWeight: '300' },
+  imageWrapper: {
+    position: 'relative',
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
+    padding: 2,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  thumb: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 14,
+    resizeMode: 'cover',
+  },
+  typeIndicator: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: '#FFFFFF',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    elevation: 1,
+  },
+  cardInfo: {
+    flex: 1,
+    marginLeft: 14,
+    justifyContent: 'space-between',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    width: '100%',
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A', // Slate-900 typography
+    flexShrink: 1,
+    letterSpacing: -0.3,
+  },
+  strengthBadge: {
+    backgroundColor: '#F0F5FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D3E4FF',
+    height: 25,
+    maxWidth: 90,
+  },
+  strengthText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2563EB', // Vibrant sapphire micro text
+  },
+  subtitle: {
+    fontSize: 13,
+    color: '#64748B', // Elegant slate descriptions
+    marginTop: 4,
+    lineHeight: 18,
+    fontWeight: '400',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    gap: 6,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dateIcon: {
+    fontSize: 10,
+    opacity: 0.6,
+  },
+  date: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+  },
+  badgeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: -0.1,
+  },
+  arrowContainer: {
+    paddingLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  arrowCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  arrow: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: 'bold',
+  },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md, padding: 40 },
   emptyIcon: { fontSize: 64 },
   emptyText: { ...typography.bodyLarge, color: colors.textMuted },

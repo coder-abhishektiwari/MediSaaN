@@ -118,6 +118,8 @@
   "privacy": "رازداری",
   "data_local": "آپ کی معلومات صرف آپ کے فون میں رہتی ہے",
   "clear_data": "تمام ڈیٹا مٹا دیں",
+  "clear_data_message": "اس سے آپ کی تمام دوائیاں، رپورٹس اور پروفائل حذف ہو جائیں گے۔ یہ واپس نہیں کیا جا سکتا۔",
+  "clear_everything": "سب کچھ صاف کریں",
   "app_version": "ورژن",
   "offline_cache": "پہلے پہچانی گئی",
   "refill_alert": "دوائی ختم ہونے والی ہے: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "پوری فہرست دیکھیں →",
   "tool_scan_label": "دوائی پہچانیں",
   "tool_report_label": "رپورٹ سمجھیں",
-  "tool_chat_label": "MediSaaN AI چیٹ",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "دوائیوں کی ہسٹری",
   "tool_scan_desc": "فوٹو سے پہچانیں",
   "tool_report_desc": "AI تجزیہ",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "میری\nادویات",
   "tool_scan_medicine": "دوا\nاسکین",
   "tool_report_analyze": "رپورٹ کا\nتجزیہ",
-  "tool_chat_bot": "بوٹ سے\nبات",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "وائس اسسٹنٹ",
   "perm_voice_sub": "AI ہیلتھ بوٹ آواز کے تعامل کے لیے استعمال کیا جاتا ہے۔",
   "perm_location": "مقام تک رسائی",
@@ -329,5 +331,5 @@
   "next_dose": "اگلی خوراک",
   "health_score": "ہیلتھ سکور",
   "ai_powered": "AI سے چلنے والا",
-  "voice_hint": "\"ارے ساتھی، میری رپورٹ پڑھیں\" کہہ کر دیکھیں"
+  "voice_hint": "فون ہلائیں اور دوا اسکین کریں"
 }

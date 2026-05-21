@@ -129,3 +129,66 @@ export function getDetailedAdherenceHistory(patientId: number) {
   // Convert to array and sort by date descending
   return Object.values(historyByDate).sort((a, b) => b.date.localeCompare(a.date));
 }
+
+// db/queries/medicines.ts — ye function add karo
+
+export function getMedicineAdherence(patientId: number, days: number = 30) {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceStr = since.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+
+  const rows = db.execute(`
+    SELECT 
+      m.name                                          AS medicineName,
+      COUNT(*)                                        AS totalDoses,
+      SUM(CASE WHEN rl.action = 'taken'   THEN 1 ELSE 0 END) AS takenDoses,
+      SUM(CASE WHEN rl.action = 'skipped' THEN 1 ELSE 0 END) AS skippedDoses,
+      SUM(CASE WHEN rl.action = 'snoozed' THEN 1 ELSE 0 END) AS snoozedDoses,
+      MAX(CASE WHEN rl.action = 'taken' THEN rl.action_time END) AS lastTaken
+    FROM medicines m
+    LEFT JOIN reminder_logs rl 
+      ON rl.medicine_id = m.id 
+      AND DATE(rl.action_time) >= ?
+    WHERE m.patient_id = ? AND m.is_active = 1
+    GROUP BY m.id, m.name
+  `, [sinceStr, patientId]).rows?._array || [];
+
+  return rows.map((r: any) => {
+    const taken   = r.takenDoses   || 0;
+    const skipped = r.skippedDoses || 0;
+    const snoozed = r.snoozedDoses || 0;
+    const total   = r.totalDoses   || 0;
+
+    // Streak: consecutive days taken (latest first)
+    const streakRows = db.execute(`
+      SELECT DISTINCT DATE(action_time) AS day
+      FROM reminder_logs
+      WHERE medicine_id = (
+        SELECT id FROM medicines WHERE name = ? AND patient_id = ? LIMIT 1
+      ) AND action = 'taken'
+      ORDER BY day DESC
+    `, [r.medicineName, patientId]).rows?._array || [];
+
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < streakRows.length; i++) {
+      const expected = new Date(today);
+      expected.setDate(today.getDate() - i);
+      const expectedStr = expected.toISOString().split('T')[0];
+      if (streakRows[i]?.day === expectedStr) streak++;
+      else break;
+    }
+
+    return {
+      medicineName:      r.medicineName,
+      totalDoses:        total,
+      takenDoses:        taken,
+      skippedDoses:      skipped,
+      snoozedDoses:      snoozed,
+      missedDoses:       Math.max(0, total - taken - skipped - snoozed),
+      adherencePercent:  total > 0 ? Math.round((taken / total) * 100) : 0,
+      lastTaken:         r.lastTaken || null,
+      streak,
+    };
+  });
+}

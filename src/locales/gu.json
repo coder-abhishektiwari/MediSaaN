@@ -118,6 +118,8 @@
   "privacy": "ગોપનીયતા",
   "data_local": "તમારી માહિતી ફક્ત તમારા ઉપકરણ પર રહે છે",
   "clear_data": "બધો ડેટા ભૂંસી નાખો",
+  "clear_data_message": "આથી તમારી બધી દવાઓ, રિપોર્ટ્સ અને પ્રોફાઇલ હટાવવામાં આવશે. આ પાછું ફરી શકશે નહીં.",
+  "clear_everything": "બધું સાફ કરો",
   "app_version": "વર્ઝન",
   "offline_cache": "પહેલા ઓળખેલ",
   "refill_alert": "દવા ઓછી થઈ રહી છે: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "આખી યાદી જુઓ →",
   "tool_scan_label": "દવા ઓળખો",
   "tool_report_label": "રિપોર્ટ સમજો",
-  "tool_chat_label": "MediSaaN AI ચેટ",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "દવાનો ઇતિહાસ",
   "tool_scan_desc": "ફોટો દ્વારા ઓળખો",
   "tool_report_desc": "AI વિશ્લેષણ",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "મારી\nદવાઓ",
   "tool_scan_medicine": "દવા\nસ્કેન",
   "tool_report_analyze": "રિપોર્ટ\nવિશ્લેષણ",
-  "tool_chat_bot": "બોટ સાથે\nચેટ",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "વૉઇસ સહાયક",
   "perm_voice_sub": "AI હેલ્થ બૉટ વૉઇસ ક્રિયાપ્રતિક્રિયા માટે વપરાય છે.",
   "perm_location": "સ્થાન ઍક્સેસ",
@@ -329,5 +331,5 @@
   "next_dose": "આગામી ડોઝ",
   "health_score": "આરોગ્ય સ્કોર",
   "ai_powered": "AI સંચાલિત",
-  "voice_hint": "\"હે સાથી, મારો રિપોર્ટ વાંચો\" કહેવાનો પ્રયાસ કરો"
+  "voice_hint": "ફોન હલાવો અને દવાના પેકેજને સ્કેન કરો"
 }

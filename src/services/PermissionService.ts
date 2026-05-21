@@ -14,6 +14,7 @@ export class PermissionService {
       voice: false,
       location: false,
       overlay: false,
+      accessibility: false,
     };
 
     // 1. Camera
@@ -64,6 +65,17 @@ export class PermissionService {
       results.overlay = true;
     }
 
+    // 8. Accessibility access for volume shortcut behavior on Android
+    if (Platform.OS === 'android' && MediSaaNNativeModule?.isAccessibilityEnabled) {
+      try {
+        results.accessibility = await MediSaaNNativeModule.isAccessibilityEnabled();
+      } catch {
+        results.accessibility = false;
+      }
+    } else {
+      results.accessibility = Platform.OS !== 'android';
+    }
+
     return results;
   }
 
@@ -111,6 +123,16 @@ export class PermissionService {
     if (Platform.OS === 'android') {
       try {
         await Linking.sendIntent('android.settings.action.MANAGE_OVERLAY_PERMISSION');
+      } catch (e) {
+        Linking.openSettings();
+      }
+    }
+  }
+
+  static async requestAccessibility() {
+    if (Platform.OS === 'android') {
+      try {
+        await Linking.sendIntent('android.settings.ACCESSIBILITY_SETTINGS');
       } catch (e) {
         Linking.openSettings();
       }

@@ -118,6 +118,8 @@
   "privacy": "ಗೌಪ್ಯತೆ",
   "data_local": "ನಿಮ್ಮ ಮಾಹಿತಿ ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲೇ ಸುರಕ್ಷಿತವಾಗಿರುತ್ತದೆ",
   "clear_data": "ಎಲ್ಲಾ ಡೇಟಾವನ್ನು ಅಳಿಸಿ",
+  "clear_data_message": "ಇದು ನಿಮ್ಮ ಎಲ್ಲಾ ಔಷಧಿಗಳನ್ನು, ವರದಿಗಳನ್ನು ಮತ್ತು ಪ್ರೊಫೈಲ್ ಅನ್ನು ಅಳಿಸುತ್ತದೆ. ಇದನ್ನು ಹಿಂದಕ್ಕೆ ತರಲು ಸಾಧ್ಯವಿಲ್ಲ.",
+  "clear_everything": "ಎಲ್ಲವನ್ನೂ ತೆರವು ಮಾಡಿ",
   "app_version": "ಆವೃತ್ತಿ",
   "offline_cache": "ಹಿಂದೆ ಗುರುತಿಸಲಾದವು",
   "refill_alert": "ಮಾತ್ರೆ ಖಾಲಿಯಾಗುತ್ತಿದೆ: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "ಪೂರ್ಣ ಪಟ್ಟಿ ನೋಡಿ →",
   "tool_scan_label": "ಮಾತ್ರೆ ಗುರುತಿಸಿ",
   "tool_report_label": "ವರದಿ ಅರ್ಥಮಾಡಿಕೊಳ್ಳಿ",
-  "tool_chat_label": "MediSaaN AI ಚಾಟ್",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "ಮಾತ್ರೆಗಳ ಇತಿಹಾಸ",
   "tool_scan_desc": "ಫೋಟೋದಿಂದ ಗುರುತಿಸಿ",
   "tool_report_desc": "AI ವಿಶ್ಲೇಷಣೆ",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "ನನ್ನ\nಔಷಧಿಗಳು",
   "tool_scan_medicine": "ಔಷಧಿ\nಸ್ಕ್ಯಾನ್",
   "tool_report_analyze": "ವರದಿ\nವಿಶ್ಲೇಷಣೆ",
-  "tool_chat_bot": "ಬಾಟ್ ಜೊತೆ\nಚಾಟ್",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "ಧ್ವನಿ ಸಹಾಯಕ",
   "perm_voice_sub": "AI ಆರೋಗ್ಯ ಬಾಟ್ ಧ್ವನಿ ಸಂವಹನಕ್ಕಾಗಿ ಬಳಸಲಾಗುತ್ತದೆ.",
   "perm_location": "ಸ್ಥಳ ಪ್ರವೇಶ",
@@ -329,5 +331,5 @@
   "next_dose": "ಮುಂದಿನ ಡೋಸ್",
   "health_score": "ಆರೋಗ್ಯ ಸ್ಕೋರ್",
   "ai_powered": "AI ಚಾಲಿತ",
-  "voice_hint": "\"ಹೇ ಸಾಥಿ, ನನ್ನ ವರದಿಯನ್ನು ಓದಿ\" ಎಂದು ಹೇಳಲು ಪ್ರಯತ್ನಿಸಿ"
+  "voice_hint": "ಫೋನ್ ಕದಡಿ, ಔಷಧಿ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ"
 }

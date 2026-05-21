@@ -118,6 +118,8 @@
   "privacy": "ଗୋପନୀୟତା",
   "data_local": "ଆପଣଙ୍କ ତଥ୍ୟ କେବଳ ଆପଣଙ୍କ ଫୋନ୍‌ରେ ସୁରକ୍ଷିତ ରହେ",
   "clear_data": "ସବୁ ଡାଟା ଡିଲିଟ୍ କରନ୍ତୁ",
+  "clear_data_message": "ଏହା ଆପଣଙ୍କର ସମସ୍ତ ଔଷଧ, ରିପୋର୍ଟ ଏବଂ ପ୍ରୋଫାଇଲକୁ ହଟାଇଦିଏ। ଏହାକୁ ପୁନଃ ପ୍ରତିଷ୍ଠା କରିପାରିବେ ନାହିଁ।",
+  "clear_everything": "ସବୁକିଛି ସଫା କରନ୍ତୁ",
   "app_version": "ଭର୍ସନ୍",
   "offline_cache": "ପୂର୍ବରୁ ଚିହ୍ନଟ ହୋଇଥିବା",
   "refill_alert": "ଔଷଧ ସରିବାକୁ ଯାଉଛି: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "ପୁରା ତାଲିକା ଦେଖନ୍ତୁ →",
   "tool_scan_label": "ଔଷଧ ଚିହ୍ନନ୍ତୁ",
   "tool_report_label": "ରିପୋର୍ଟ ବୁଝନ୍ତୁ",
-  "tool_chat_label": "MediSaaN AI ଚାଟ୍",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "ଔଷଧର ଇତିହାସ",
   "tool_scan_desc": "ଫଟୋରୁ ଚିହ୍ନନ୍ତୁ",
   "tool_report_desc": "AI ବିଶ୍ଳେષଣ",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "ମୋର\nମେଡିସିନ୍",
   "tool_scan_medicine": "ମେଡିସିନ୍\nସ୍କାନ୍",
   "tool_report_analyze": "ରିପୋର୍ଟ\nବିଶ୍ଳେଷଣ",
-  "tool_chat_bot": "ବୋଟ୍ ସହ\nଚାଟ୍",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "ଭଏସ୍ ଆସିଷ୍ଟାଣ୍ଟ |",
   "perm_voice_sub": "AI ସ୍ bot ାସ୍ଥ୍ୟ ବଟ୍ ଭଏସ୍ ପାରସ୍ପରିକ କାର୍ଯ୍ୟ ପାଇଁ ବ୍ୟବହୃତ ହୁଏ |",
   "perm_location": "ଅବସ୍ଥାନ ପ୍ରବେଶ",
@@ -329,5 +331,5 @@
   "next_dose": "ପରବର୍ତ୍ତୀ ଡୋଜ୍ |",
   "health_score": "ସ୍ୱାସ୍ଥ୍ୟ ସ୍କୋର",
   "ai_powered": "AI ଚାଳିତ |",
-  "voice_hint": "କହିବାକୁ ଚେଷ୍ଟା କର \"ଆରେ ସାଥି, ମୋର ରିପୋର୍ଟ ପ read\""
+  "voice_hint": "ଫୋନ୍ କୁ ଝାଲନ୍ତୁ, ଔଷଧ ଏବଂ ପ୍ୟାକେଜ୍ ସ୍କ୍ୟାନ୍ କରନ୍ତୁ"
 }

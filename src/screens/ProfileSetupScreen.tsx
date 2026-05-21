@@ -6,6 +6,7 @@ import {
 import { usePatientStore, Patient } from '../store/patientStore';
 import { colors, typography, spacing, borderRadius, sizes } from '../theme';
 import { db } from '../db/schema';
+import { ApiKeyService } from '../services/ApiKeyService';
 import { useTranslation } from 'react-i18next';
 
 const CONDITIONS = ['Diabetes', 'BP', 'Heart Disease', 'Thyroid', 'Kidney', 'Asthma', 'Arthritis', 'Other'];
@@ -76,8 +77,10 @@ export default function ProfileSetupScreen({ navigation }: any) {
     setPatient(updatedPatient);
     if (patient?.id) {
       navigation.goBack();
-    } else {
+    } else if (ApiKeyService.hasApiKeys()) {
       navigation.replace('Main');
+    } else {
+      navigation.replace('ApiSetup', { fromProfile: true });
     }
   };
 

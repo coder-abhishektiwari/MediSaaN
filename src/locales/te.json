@@ -118,6 +118,8 @@
   "privacy": "గోప్యత",
   "data_local": "మీ సమాచారం మీ పరికరంలోనే ఉంటుంది",
   "clear_data": "మొత్తం డేటాను తుడిచివేయండి",
+  "clear_data_message": "ఇది మీ అన్ని మందులు, రిపోర్టులు మరియు ప్రొఫైల్‌ను తొలగిస్తుంది. దీనిని తిరిగి తెస్తే కాదు.",
+  "clear_everything": "అన్నింటినీ క్లియర్ చేయండి",
   "app_version": "వెర్షన్",
   "offline_cache": "ఇంతకుముందు గుర్తించినవి",
   "refill_alert": "మందు అయిపోతోంది: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "పూర్తి జాబితా చూడండి →",
   "tool_scan_label": "మందును గుర్తించండి",
   "tool_report_label": "రిపోర్ట్‌ను అర్థం చేసుకోండి",
-  "tool_chat_label": "MediSaaN AI చాట్",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "మందుల చరిత్ర",
   "tool_scan_desc": "ఫోటో ద్వారా గుర్తించండి",
   "tool_report_desc": "AI విశ్లేషణ",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "నా\nమందులు",
   "tool_scan_medicine": "మందుల\nస్కాన్",
   "tool_report_analyze": "రిపోర్்ட்\nవిశ్లేషణ",
-  "tool_chat_bot": "బాట్‌తో\nచాట్",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "వాయిస్ అసిస్టెంట్",
   "perm_voice_sub": "AI హెల్త్ బాట్ వాయిస్ ఇంటరాక్షన్‌ల కోసం ఉపయోగించబడుతుంది.",
   "perm_location": "స్థాన యాక్సెస్",
@@ -329,5 +331,5 @@
   "next_dose": "తదుపరి మోతాదు",
   "health_score": "ఆరోగ్య స్కోరు",
   "ai_powered": "AI ఆధారితం",
-  "voice_hint": "\"హే సాథీ, నా నివేదికను చదవండి\" అని చెప్పి ప్రయత్నించండి"
+  "voice_hint": "ఫోన్‌ను త్రాటు చేసి మందులను స్కాన్ చేయండి"
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, Text, StyleSheet, SafeAreaView, TouchableOpacity, 
-  ScrollView, StatusBar, AppState 
+  ScrollView, StatusBar, AppState, Platform 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, typography, spacing, borderRadius } from '../theme';
@@ -96,6 +96,15 @@ export default function PermissionScreen({ navigation, route }: any) {
             granted={perms.overlay}
             onReq={PermissionService.requestOverlay}
           />
+          {Platform.OS === 'android' && (
+            <PermissionItem 
+              title={t('perm_accessibility', { defaultValue: 'Accessibility Access' })} 
+              sub={t('perm_accessibility_sub', { defaultValue: 'Needed for volume shortcuts to work when the app is in the background.' })} 
+              icon="gesture-tap-hold" 
+              granted={perms.accessibility}
+              onReq={PermissionService.requestAccessibility}
+            />
+          )}
           <PermissionItem 
             title={t('perm_battery')} 
             sub={t('perm_battery_sub')} 

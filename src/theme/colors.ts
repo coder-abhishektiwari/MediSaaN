@@ -38,6 +38,7 @@ export const colors = {
   clinicalGradientStart: '#F8FCFD',
   clinicalGradientEnd:   '#E7F4F8',
   cardShadow: '#0F2E4A',
+  transparent: '#ffffff00',
 };
 
 export const statusColors = {

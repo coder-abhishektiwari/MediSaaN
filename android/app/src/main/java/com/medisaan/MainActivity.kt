@@ -21,6 +21,13 @@ class MainActivity : ReactActivity() {
       com.medisaan.MediSaaNNativeModule.triggerAlarmEvent(id, medicine, scheduledTime)
     }
 
+    if (intent != null && intent.hasExtra("volumeShortcutAction")) {
+      val action = intent.getStringExtra("volumeShortcutAction")
+      if (action != null) {
+        com.medisaan.MediSaaNNativeModule.triggerVolumeShortcutEvent(action)
+      }
+    }
+
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
       setShowWhenLocked(true)
       setTurnScreenOn(true)
@@ -45,6 +52,13 @@ class MainActivity : ReactActivity() {
       val medicine = intent.getStringExtra("medicine")
       val scheduledTime = intent.getStringExtra("scheduledTime")
       com.medisaan.MediSaaNNativeModule.triggerAlarmEvent(id, medicine, scheduledTime)
+    }
+
+    if (intent != null && intent.hasExtra("volumeShortcutAction")) {
+      val action = intent.getStringExtra("volumeShortcutAction")
+      if (action != null) {
+        com.medisaan.MediSaaNNativeModule.triggerVolumeShortcutEvent(action)
+      }
     }
   }
 

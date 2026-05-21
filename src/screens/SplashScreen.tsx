@@ -69,7 +69,7 @@ export default function SplashScreen({ navigation }: any) {
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         <Animated.View style={[styles.logoRing, { transform: [{ scale: pulse }] }]}>
           <View style={styles.logoInner}>
-            <Icon name="heart-pulse" size={42} color="#fff" />
+            <Icon name="leaf" size={42} color="#fff" />
           </View>
         </Animated.View>
 

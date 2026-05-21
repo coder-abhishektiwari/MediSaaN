@@ -5,6 +5,7 @@ import { QueryClient as QC, QueryClientProvider } from '@tanstack/react-query';
 import { PaperProvider } from 'react-native-paper';
 import RootNavigator from './src/navigation/RootNavigator';
 import './src/utils/i18n';
+import { useShakeShortcut } from './src/hooks/useShake'; // ← Path sahi kar
 console.log('QueryClient:', QC);
 
 const queryClient = new QC({
@@ -15,6 +16,8 @@ const queryClient = new QC({
 });
 
 export default function App() {
+  useShakeShortcut(); // ✅ Semicolon add kar
+  
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>

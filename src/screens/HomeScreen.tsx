@@ -38,10 +38,10 @@ const CAROUSEL_CARD_WIDTH = SCREEN_WIDTH - 64;
 
 function getGreeting(t: any) {
   const h = dayjs().hour();
-  if (h < 12) return { text: t('greet_morning'), icon: 'weather-sunset-up', colors: ['#FFE082', '#FF8A65', '#4DB6AC'] };
-  if (h < 17) return { text: t('greet_afternoon'), icon: 'white-balance-sunny', colors: ['#FFF6C7', '#FFD54F', '#4CAF50'] };
-  if (h < 21) return { text: t('greet_evening'), icon: 'weather-sunset', colors: ['#FFB74D', '#FF8A65', '#3F51B5'] };
-  return { text: t('greet_night'), icon: 'weather-night', colors: ['#0B132B', '#1C2541', '#3A506B'] };
+  if (h < 12) return { text: t('greet_morning'), icon: 'weather-sunset-up', name:'🌅', colors: ['#FFE082', '#FF8A65', '#4DB6AC'] };
+  if (h < 17) return { text: t('greet_afternoon'), icon: 'white-balance-sunny', name:'☀️', colors: ['#FFF6C7', '#FFD54F', '#4CAF50'] };
+  if (h < 21) return { text: t('greet_evening'), icon: 'weather-sunset', name:'🌇', colors: ['#FFB74D', '#FF8A65', '#3F51B5'] };
+  return { text: t('greet_night'), icon: 'weather-night', name:'🌙', colors: ['#0B132B', '#1C2541', '#3A506B'] };
 }
 
 // getDoctorNote removed — replaced by AI Doctor Consultation
@@ -402,11 +402,16 @@ export default function HomeScreen({ navigation }: any) {
   const [streakScore, setStreakScore] = useState(100);
   const [adherenceTrend, setAdherenceTrend] = useState<string[]>([]);
   const [showScoreTooltip, setShowScoreTooltip] = useState(false);
+  const [showAllMissed, setShowAllMissed] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const introAnim = useRef(new Animated.Value(0)).current;
   const greeting = getGreeting(t);
   const aiCalledRef = useRef(false);
+
+  useEffect(() => {
+    setShowAllMissed(false);
+  }, [skippedDoses.length]);
 
   useEffect(() => {
     Animated.timing(introAnim, {
@@ -568,6 +573,9 @@ export default function HomeScreen({ navigation }: any) {
 
   const progress = todayStats.total > 0 ? todayStats.taken / todayStats.total : 0;
   const healthScore = todayStats.total > 0 ? Math.max(60, Math.round(progress * 100)) : 92;
+  const missedPreview = skippedDoses.slice(0, 5);
+  const displayedMissed = showAllMissed ? skippedDoses : missedPreview;
+  const moreMissed = showAllMissed ? 0 : Math.max(0, skippedDoses.length - missedPreview.length);
   const heroTranslate = scrollY.interpolate({
     inputRange: [0, 160],
     outputRange: [0, -26],
@@ -644,16 +652,17 @@ export default function HomeScreen({ navigation }: any) {
               </Text>
             </View>
             <TouchableOpacity onPress={() => navigation.navigate('Profile')} activeOpacity={0.85}>
-              <View style={styles.scenicAvatar}>
-                <LinearGradient
+              <Text style={styles.scenicAvatar}>
+                {/* <LinearGradient
                   colors={greeting.colors}
                   style={styles.scenicArt}
-                >
-                  <Icon name={greeting.icon} size={28} color="#FFF9D6" />
+                > */}
+                {greeting.name}
+                  {/* <Icon name={greeting.icon} size={28} color="#FFF9D6" />
                   <View style={styles.scenicLineOne} />
-                  <View style={styles.scenicLineTwo} />
-                </LinearGradient>
-              </View>
+                  <View style={styles.scenicLineTwo} /> */}
+                {/* </LinearGradient> */}
+              </Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -701,6 +710,30 @@ export default function HomeScreen({ navigation }: any) {
                   <Text style={styles.heroMiniLabel}>{t('health_score', { defaultValue: 'Health Score' })}</Text>
                   <Text style={[styles.heroMiniValue, styles.heroScoreValue]}>{healthScore}%</Text>
                 </View>
+              </View>
+            </Animated.View>
+          )}
+
+          {skippedDoses.length > 0 && (
+            <Animated.View style={[styles.missedSection, { marginHorizontal: 20 }, introStyle]}>
+              <Text style={styles.missedHeading}>{t('missed_alert', { count: skippedDoses.length })}</Text>
+              <View style={styles.missedList}>
+                {displayedMissed.map((d: any, index: number) => (
+                  <View key={`${d.id}-${d.scheduled_time}-${index}`} style={styles.missedRow}>
+                    <View style={styles.missedBullet} />
+                    <Text style={styles.missedText}>{d.name} · {d.scheduled_time}</Text>
+                  </View>
+                ))}
+                {moreMissed > 0 && (
+                  <TouchableOpacity onPress={() => setShowAllMissed(true)} activeOpacity={0.7} style={styles.missedMoreButton}>
+                    <Text style={styles.missedMore}>{t('and_more', { count: moreMissed, defaultValue: `and ${moreMissed} more` })}</Text>
+                  </TouchableOpacity>
+                )}
+                {showAllMissed && skippedDoses.length > missedPreview.length && (
+                  <TouchableOpacity onPress={() => setShowAllMissed(false)} activeOpacity={0.7} style={styles.missedMoreButton}>
+                    <Text style={styles.missedLess}>{t('show_less', { defaultValue: 'Show less' })}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </Animated.View>
           )}
@@ -856,14 +889,15 @@ const styles = StyleSheet.create({
   scenicAvatar: {
     width: 94,
     height: 94,
-    borderRadius: 47,
-    padding: 4,
-    backgroundColor: '#fff',
-    elevation: 12,
-    shadowColor: '#D2A63B',
-    shadowOpacity: 0.32,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 10 },
+    // borderRadius: 47,
+    // padding: 4,
+    fontSize: 70,
+    // backgroundColor: '#fff',
+    // elevation: 12,
+    // shadowColor: '#D2A63B',
+    // shadowOpacity: 0.32,
+    // shadowRadius: 22,
+    // shadowOffset: { width: 0, height: 10 },
   },
   scenicArt: {
     flex: 1,
@@ -939,6 +973,15 @@ const styles = StyleSheet.create({
   heroMiniLabel: { fontSize: 16, color: colors.textMuted, fontWeight: '600', marginBottom: 8 },
   heroMiniValue: { fontSize: 22, color: colors.primary, fontWeight: '900' },
   heroScoreValue: { color: '#0F5CCB' },
+  missedSection: { marginTop: 18, backgroundColor: 'rgba(254,239,235,0.9)', borderRadius: 24, padding: 18, borderWidth: 1, borderColor: 'rgba(239,68,68,0.18)' },
+  missedHeading: { fontSize: 15, fontWeight: '800', color: colors.danger, marginBottom: 12 },
+  missedList: { gap: 10 },
+  missedRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  missedBullet: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger },
+  missedText: { fontSize: 14, color: colors.textPrimary, lineHeight: 20 },
+  missedMoreButton: { marginTop: 10, alignSelf: 'flex-start' },
+  missedMore: { fontSize: 13, color: colors.primary, fontWeight: '700' },
+  missedLess: { marginTop: 10, fontSize: 13, color: colors.textSecondary, fontWeight: '600' },
 
   // Section layout
   section: { paddingHorizontal: 24, marginBottom: 26 },
@@ -995,6 +1038,14 @@ const styles = StyleSheet.create({
     color: colors.primary,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
+  },
+  aiErrorBox: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.danger + '20',
   },
   aiStatusBadge: {
     paddingHorizontal: 8,

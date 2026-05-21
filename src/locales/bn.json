@@ -118,6 +118,8 @@
   "privacy": "গোপনীয়তা",
   "data_local": "আপনার তথ্য শুধুমাত্র আপনার ডিভাইসে থাকে",
   "clear_data": "সব তথ্য মুছুন",
+  "clear_data_message": "এতে আপনার সমস্ত ওষুধ, রিপোর্ট এবং প্রোফাইল মুছে যাবে। এটি পূর্বাবস্থায় ফিরানো যাবে না।",
+  "clear_everything": "সব কিছু মুছুন",
   "app_version": "ভার্সন",
   "offline_cache": "আগে চেনা হয়েছে",
   "refill_alert": "ওষুধ কমে আসছে: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "পুরো লিস্ট দেখুন →",
   "tool_scan_label": "ওষুধ চিনুন",
   "tool_report_label": "রিপোর্ট বুঝুন",
-  "tool_chat_label": "MediSaaN AI চ্যাট",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "ওষুধের ইতিহাস",
   "tool_scan_desc": "ফটো থেকে চিনুন",
   "tool_report_desc": "AI বিশ্লেষণ",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "আমার\nওষুধ",
   "tool_scan_medicine": "ওষুধ\nস্ক্যান",
   "tool_report_analyze": "রিপোর্ট\nবিশ্লেষণ",
-  "tool_chat_bot": "বটের সাথে\nচ্যাট",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "ভয়েস সহকারী",
   "perm_voice_sub": "এআই হেলথ বট ভয়েস ইন্টারঅ্যাকশনের জন্য ব্যবহৃত হয়।",
   "perm_location": "অবস্থান অ্যাক্সেস",
@@ -329,5 +331,5 @@
   "next_dose": "পরবর্তী ডোজ",
   "health_score": "স্বাস্থ্য স্কোর",
   "ai_powered": "এআই চালিত",
-  "voice_hint": "\"আরে সাথী, আমার রিপোর্ট পড়ুন\" বলার চেষ্টা করুন"
+  "voice_hint": "ফোন ঝাঁকান, ওষুধ স্ক্যান করুন"
 }

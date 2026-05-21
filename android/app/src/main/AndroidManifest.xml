@@ -53,5 +53,11 @@
           </intent-filter>
       </receiver>
 
+      <receiver android:name=".VolumeShortcutReceiver" android:exported="true">
+          <intent-filter>
+              <action android:name="android.media.VOLUME_CHANGED_ACTION" />
+          </intent-filter>
+      </receiver>
+
     </application>
 </manifest>

@@ -23,31 +23,31 @@ type LangCode = 'en' | 'hi' | 'bn' | 'ta' | 'te' | 'mr' | 'gu' | string;
 
 const STAGE_MESSAGES: Record<string, Record<LangCode, { label: string; sub: string; voice: string }>> = {
   capturing: {
-    en: { label: 'Capturing report…',       sub: 'Keep the page flat & steady',             voice: 'Capturing the report, please hold steady.' },
-    hi: { label: 'रिपोर्ट कैप्चर हो रही है…', sub: 'पेज को सीधा और स्थिर रखें',               voice: 'रिपोर्ट का फ़ोटो लिया जा रहा है, कृपया स्थिर रहें।' },
-    bn: { label: 'রিপোর্ট তোলা হচ্ছে…',       sub: 'পৃষ্ঠাটি সমতল ও স্থির রাখুন',              voice: 'রিপোর্টের ছবি তোলা হচ্ছে, স্থির থাকুন।' },
-    ta: { label: 'அறிக்கை படம் பிடிக்கிறது…',  sub: 'பக்கத்தை தட்டையாக வைக்கவும்',           voice: 'அறிக்கை படம் பிடிக்கப்படுகிறது, நிலையாக இருங்கள்.' },
-    te: { label: 'నివేదిక తీస్తున్నారు…',       sub: 'పేజీని చదునుగా, స్థిరంగా ఉంచండి',         voice: 'నివేదిక తీస్తున్నారు, స్థిరంగా ఉండండి.' },
-    mr: { label: 'अहवाल कॅप्चर होत आहे…',      sub: 'पान सपाट आणि स्थिर ठेवा',                voice: 'अहवालाचा फोटो घेत आहोत, कृपया स्थिर राहा.' },
-    gu: { label: 'રિપોર્ટ કૅપ્ચર થઈ રહ્યો છે…', sub: 'પૃષ્ઠ સપાટ અને સ્થિર રાખો',              voice: 'રિપોર્ટ કૅપ્ચર થઈ રહ્યો છે, સ્થિર રહો.' },
+    en: { label: 'Capturing report…', sub: 'Keep the page flat & steady', voice: 'Capturing the report, please hold steady.' },
+    hi: { label: 'रिपोर्ट कैप्चर हो रही है…', sub: 'पेज को सीधा और स्थिर रखें', voice: 'रिपोर्ट का फ़ोटो लिया जा रहा है, कृपया स्थिर रहें।' },
+    bn: { label: 'রিপোর্ট তোলা হচ্ছে…', sub: 'পৃষ্ঠাটি সমতল ও স্থির রাখুন', voice: 'রিপোর্টের ছবি তোলা হচ্ছে, স্থির থাকুন।' },
+    ta: { label: 'அறிக்கை படம் பிடிக்கிறது…', sub: 'பக்கத்தை தட்டையாக வைக்கவும்', voice: 'அறிக்கை படம் பிடிக்கப்படுகிறது, நிலையாக இருங்கள்.' },
+    te: { label: 'నివేదిక తీస్తున్నారు…', sub: 'పేజీని చదునుగా, స్థిరంగా ఉంచండి', voice: 'నివేదిక తీస్తున్నారు, స్థిరంగా ఉండండి.' },
+    mr: { label: 'अहवाल कॅप्चर होत आहे…', sub: 'पान सपाट आणि स्थिर ठेवा', voice: 'अहवालाचा फोटो घेत आहोत, कृपया स्थिर राहा.' },
+    gu: { label: 'રિપોર્ટ કૅપ્ચર થઈ રહ્યો છે…', sub: 'પૃષ્ઠ સપાટ અને સ્થિર રાખો', voice: 'રિપોર્ટ કૅપ્ચર થઈ રહ્યો છે, સ્થિર રહો.' },
   },
   validating: {
-    en: { label: 'Validating report…',       sub: 'Checking if this is a medical report',    voice: 'Checking if this is a valid medical report.' },
-    hi: { label: 'रिपोर्ट सत्यापित हो रही है…', sub: 'जाँच हो रही है यह मेडिकल रिपोर्ट है',  voice: 'जाँच हो रही है कि यह मेडिकल रिपोर्ट है या नहीं।' },
-    bn: { label: 'রিপোর্ট যাচাই হচ্ছে…',       sub: 'এটি মেডিকেল রিপোর্ট কিনা যাচাই হচ্ছে',  voice: 'যাচাই করা হচ্ছে এটি মেডিকেল রিপোর্ট কিনা।' },
-    ta: { label: 'அறிக்கை சரிபார்க்கிறது…',    sub: 'இது மருத்துவ அறிக்கையா என சரிபார்க்கிறோம்', voice: 'இது மருத்துவ அறிக்கையா என சரிபார்க்கிறோம்.' },
-    te: { label: 'నివేదిక ధృవీకరిస్తున్నారు…',  sub: 'ఇది వైద్య నివేదికా అని తనిఖీ చేస్తున్నారు', voice: 'ఇది వైద్య నివేదికా అని తనిఖీ చేస్తున్నారు.' },
-    mr: { label: 'अहवाल सत्यापित होत आहे…',    sub: 'हे वैद्यकीय अहवाल आहे का ते तपासत आहोत', voice: 'हा वैद्यकीय अहवाल आहे का ते तपासत आहोत.' },
-    gu: { label: 'રિપોર્ટ ચકાસી રહ્યા છીએ…',   sub: 'આ તબીબી રિપોર્ટ છે કે નહીં ચકાસી રહ્યા', voice: 'આ તબીબી રિપોર્ટ છે કે નહીં ચકાસી રહ્યા છીએ.' },
+    en: { label: 'Validating report…', sub: 'Checking if this is a medical report', voice: 'Checking if this is a valid medical report.' },
+    hi: { label: 'रिपोर्ट सत्यापित हो रही है…', sub: 'जाँच हो रही है यह मेडिकल रिपोर्ट है', voice: 'जाँच हो रही है कि यह मेडिकल रिपोर्ट है या नहीं।' },
+    bn: { label: 'রিপোর্ট যাচাই হচ্ছে…', sub: 'এটি মেডিকেল রিপোর্ট কিনা যাচাই হচ্ছে', voice: 'যাচাই করা হচ্ছে এটি মেডিকেল রিপোর্ট কিনা।' },
+    ta: { label: 'அறிக்கை சரிபார்க்கிறது…', sub: 'இது மருத்துவ அறிக்கையா என சரிபார்க்கிறோம்', voice: 'இது மருத்துவ அறிக்கையா என சரிபார்க்கிறோம்.' },
+    te: { label: 'నివేదిక ధృవీకరిస్తున్నారు…', sub: 'ఇది వైద్య నివేదికా అని తనిఖీ చేస్తున్నారు', voice: 'ఇది వైద్య నివేదికా అని తనిఖీ చేస్తున్నారు.' },
+    mr: { label: 'अहवाल सत्यापित होत आहे…', sub: 'हे वैद्यकीय अहवाल आहे का ते तपासत आहोत', voice: 'हा वैद्यकीय अहवाल आहे का ते तपासत आहोत.' },
+    gu: { label: 'રિપોર્ટ ચકાસી રહ્યા છીએ…', sub: 'આ તબીબી રિપોર્ટ છે કે નહીં ચકાસી રહ્યા', voice: 'આ તબીબી રિપોર્ટ છે કે નહીં ચકાસી રહ્યા છીએ.' },
   },
   processing: {
-    en: { label: 'Reading your report…',     sub: 'Analyzing test values & parameters',      voice: 'Reading your report and analyzing test values.' },
-    hi: { label: 'रिपोर्ट पढ़ रहे हैं…',      sub: 'टेस्ट के मान और पैरामीटर विश्लेषण हो रहे हैं', voice: 'रिपोर्ट पढ़ी जा रही है और परीक्षण मानों का विश्लेषण किया जा रहा है।' },
-    bn: { label: 'রিপোর্ট পড়া হচ্ছে…',        sub: 'পরীক্ষার মান ও প্যারামিটার বিশ্লেষণ হচ্ছে', voice: 'রিপোর্ট পড়া হচ্ছে এবং পরীক্ষার মান বিশ্লেষণ করা হচ্ছে।' },
-    ta: { label: 'அறிக்கை படிக்கப்படுகிறது…',  sub: 'சோதனை மதிப்புகள் பகுப்பாய்வு செய்யப்படுகின்றன', voice: 'உங்கள் அறிக்கை படிக்கப்படுகிறது மற்றும் சோதனை மதிப்புகள் பகுப்பாய்வு செய்யப்படுகின்றன.' },
-    te: { label: 'నివేదిక చదువుతున్నారు…',      sub: 'పరీక్ష విలువలు మరియు పారామీటర్లు విశ్లేషిస్తున్నారు', voice: 'మీ నివేదిక చదువుతున్నారు మరియు పరీక్ష విలువలు విశ్లేషిస్తున్నారు.' },
-    mr: { label: 'अहवाल वाचत आहोत…',          sub: 'चाचणी मूल्ये आणि पॅरामीटर्स विश्लेषण होत आहे', voice: 'तुमचा अहवाल वाचत आहोत आणि चाचणी मूल्यांचे विश्लेषण होत आहे.' },
-    gu: { label: 'રિપોર્ટ વાંચી રહ્યા છીએ…',   sub: 'ટેસ્ટ મૂલ્યો અને પૅરાమీટર્સ વિશ્લેષણ થઈ રહ્યું છે', voice: 'રિપોર્ટ વાંચી રહ્યા છીએ आणि ટેસ્ટ મૂલ્યોનું વિశ్లేષણ થઈ રહ્યું છે.' },
+    en: { label: 'Reading your report…', sub: 'Analyzing test values & parameters', voice: 'Reading your report and analyzing test values.' },
+    hi: { label: 'रिपोर्ट पढ़ रहे हैं…', sub: 'टेस्ट के मान और पैरामीटर विश्लेषण हो रहे हैं', voice: 'रिपोर्ट पढ़ी जा रही है और परीक्षण मानों का विश्लेषण किया जा रहा है।' },
+    bn: { label: 'রিপোর্ট পড়া হচ্ছে…', sub: 'পরীক্ষার মান ও প্যারামিটার বিশ্লেষণ হচ্ছে', voice: 'রিপোর্ট পড়া হচ্ছে এবং পরীক্ষার মান বিশ্লেষণ করা হচ্ছে।' },
+    ta: { label: 'அறிக்கை படிக்கப்படுகிறது…', sub: 'சோதனை மதிப்புகள் பகுப்பாய்வு செய்யப்படுகின்றன', voice: 'உங்கள் அறிக்கை படிக்கப்படுகிறது மற்றும் சோதனை மதிப்புகள் பகுப்பாய்வு செய்யப்படுகின்றன.' },
+    te: { label: 'నివేదిక చదువుతున్నారు…', sub: 'పరీక్ష విలువలు మరియు పారామీటర్లు విశ్లేషిస్తున్నారు', voice: 'మీ నివేదిక చదువుతున్నారు మరియు పరీక్ష విలువలు విశ్లేషిస్తున్నారు.' },
+    mr: { label: 'अहवाल वाचत आहोत…', sub: 'चाचणी मूल्ये आणि पॅरामीटर्स विश्लेषण होत आहे', voice: 'तुमचा अहवाल वाचत आहोत आणि चाचणी मूल्यांचे विश्लेषण होत आहे.' },
+    gu: { label: 'રિપોર્ટ વાંચી રહ્યા છીએ…', sub: 'ટેસ્ટ મૂલ્યો અને પૅરાమీટર્સ વિશ્લેષણ થઈ રહ્યું છે', voice: 'રિપોર્ટ વાંચી રહ્યા છીએ आणि ટેસ્ટ મૂલ્યોનું વિశ్లేષણ થઈ રહ્યું છે.' },
   },
 };
 
@@ -61,8 +61,8 @@ function getMsg(stage: string, lang: string) {
 
 function ScanningOverlay({ stage, lang }: { stage: string; lang: string }) {
   const pulse = useRef(new Animated.Value(1)).current;
-  const spin  = useRef(new Animated.Value(0)).current;
-  const fade  = useRef(new Animated.Value(0)).current;
+  const spin = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fade, { toValue: 1, duration: 300, useNativeDriver: true }).start();
@@ -70,7 +70,7 @@ function ScanningOverlay({ stage, lang }: { stage: string; lang: string }) {
     const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1.22, duration: 900, easing: Easing.out(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1,    duration: 900, easing: Easing.in(Easing.ease),  useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.in(Easing.ease), useNativeDriver: true }),
       ]),
     );
     pulseLoop.start();
@@ -86,7 +86,7 @@ function ScanningOverlay({ stage, lang }: { stage: string; lang: string }) {
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   const stageEmoji: Record<string, string> = {
-    capturing:  '📄',
+    capturing: '📄',
     validating: '🔍',
     processing: '🔬',
   };
@@ -135,8 +135,8 @@ const so = StyleSheet.create({
     gap: 24,
   },
   bgRing3: { position: 'absolute', width: RING + 140, height: RING + 140, borderRadius: (RING + 140) / 2, backgroundColor: 'rgba(59,130,246,0.04)' },
-  bgRing2: { position: 'absolute', width: RING + 80,  height: RING + 80,  borderRadius: (RING + 80) / 2,  backgroundColor: 'rgba(59,130,246,0.06)' },
-  bgRing1: { position: 'absolute', width: RING + 30,  height: RING + 30,  borderRadius: (RING + 30) / 2,  backgroundColor: 'rgba(59,130,246,0.09)' },
+  bgRing2: { position: 'absolute', width: RING + 80, height: RING + 80, borderRadius: (RING + 80) / 2, backgroundColor: 'rgba(59,130,246,0.06)' },
+  bgRing1: { position: 'absolute', width: RING + 30, height: RING + 30, borderRadius: (RING + 30) / 2, backgroundColor: 'rgba(59,130,246,0.09)' },
   pulseRing: {
     position: 'absolute',
     width: RING + 10, height: RING + 10,
@@ -165,11 +165,11 @@ const so = StyleSheet.create({
   iconEmoji: { fontSize: 52 },
   textBlock: { alignItems: 'center', gap: 8, paddingHorizontal: 40 },
   label: { fontSize: 22, fontWeight: '700', color: '#fff', textAlign: 'center', letterSpacing: 0.3 },
-  sub:   { fontSize: 14, color: 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 20 },
+  sub: { fontSize: 14, color: 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 20 },
   dots: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  dot:       { width: 8,  height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.2)' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.2)' },
   dotActive: { width: 24, height: 8, borderRadius: 4, backgroundColor: '#3B82F6' },
-  dotDone:   { width: 8,  height: 8, borderRadius: 4, backgroundColor: 'rgba(59,130,246,0.5)' },
+  dotDone: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(59,130,246,0.5)' },
 });
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -237,31 +237,31 @@ const inf = StyleSheet.create({
 const FRAME_W = 300;
 const FRAME_H = 200;
 const FRAME_ACTIVE_COLOR = '#22C55E';
-const FRAME_ERROR_COLOR  = '#EF4444';
+const FRAME_ERROR_COLOR = '#EF4444';
 
-type FrameState      = 'empty' | 'candidate' | 'invalid';
+type FrameState = 'empty' | 'candidate' | 'invalid';
 type ProcessingStage = 'idle' | 'capturing' | 'validating' | 'processing';
 
 export default function ReportScanScreen({ navigation }: any) {
   const { t } = useTranslation();
-  const device      = useCameraDevice('back');
+  const device = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
   const camera = useRef<Camera>(null);
 
-  const { patient }  = usePatientStore();
+  const { patient } = usePatientStore();
   const { language } = useLanguageStore();
 
   const isFocused = useIsFocused();
-  const [isCameraActive, setIsCameraActive]   = useState(true);
-  const [images, setImages]                   = useState<string[]>([]);
-  const [askMorePages, setAskMorePages]        = useState(false);
-  const [result, setResult]                   = useState<any>(null);
-  const [currentScanId, setCurrentScanId]     = useState<number | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(true);
+  const [images, setImages] = useState<string[]>([]);
+  const [askMorePages, setAskMorePages] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [currentScanId, setCurrentScanId] = useState<number | null>(null);
   const [isSavedToProfile, setIsSavedToProfile] = useState(false);
-  const [loading, setLoading]                 = useState(false);
-  const [showDetailed, setShowDetailed]       = useState(false);
-  const [scanStatus, setScanStatus]           = useState(t('report_scan_instruction'));
-  const [frameState, setFrameState]           = useState<FrameState>('empty');
+  const [loading, setLoading] = useState(false);
+  const [showDetailed, setShowDetailed] = useState(false);
+  const [scanStatus, setScanStatus] = useState(t('report_scan_instruction'));
+  const [frameState, setFrameState] = useState<FrameState>('empty');
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
   const isScanningRef = useRef(false);
 
@@ -286,7 +286,7 @@ export default function ReportScanScreen({ navigation }: any) {
       setLoading(true);
       setProcessingStage('capturing');
       setScanStatus(t('loading'));
-      
+
       // Allow UI render and TTS to speak "Capturing the report" before blocking UI
       await new Promise(r => setTimeout(r, 800));
 
@@ -341,7 +341,7 @@ export default function ReportScanScreen({ navigation }: any) {
       setScanStatus(t('loading'));
       const permUris = await Promise.all(imgs.map(uri => savePermanentImage(uri)));
       const encoded = encodedImages || await Promise.all(permUris.map(uri => compressAndEncode(uri)));
-      const ctx  = buildPatientContext(patient, language);
+      const ctx = buildPatientContext(patient, language);
       const data = await analyzeReport(encoded, ctx);
 
       if (!data.is_report) {
@@ -360,6 +360,12 @@ export default function ReportScanScreen({ navigation }: any) {
       setResult(data);
       setFrameState('candidate');
       setScanStatus(t('status_normal'));
+
+      if (data.is_report && data.simple_verdict) {
+        setTimeout(() => {
+          TTSService.speak(data.simple_verdict);
+        }, 300);
+      }
       // The TTS will play when the user hits the Speak button with correct translation.
       if (patient.id) {
         const id = saveScanResult(patient.id, 'report', permUris[0], JSON.stringify(data), data.severity || 'normal', false);
@@ -401,7 +407,7 @@ export default function ReportScanScreen({ navigation }: any) {
   }
 
   const sevColor = result ? (SEVERITY_COLORS[result.severity] || colors.success) : colors.success;
-  const sevIcon  = result ? (SEVERITY_ICONS[result.severity]  || '✅')            : '✅';
+  const sevIcon = result ? (SEVERITY_ICONS[result.severity] || '✅') : '✅';
   const frameColor = frameState === 'candidate' ? FRAME_ACTIVE_COLOR : FRAME_ERROR_COLOR;
 
   return (
@@ -436,12 +442,12 @@ export default function ReportScanScreen({ navigation }: any) {
 
           <View style={styles.frameWrap}>
             <View style={[styles.frameRect, { borderColor: frameColor }]}>
-              {(['TL','TR','BL','BR'] as const).map(c => (
+              {(['TL', 'TR', 'BL', 'BR'] as const).map(c => (
                 <View
                   key={c}
                   style={[
                     styles.corner, { borderColor: frameColor },
-                    c==='TL' ? styles.cornerTL : c==='TR' ? styles.cornerTR : c==='BL' ? styles.cornerBL : styles.cornerBR,
+                    c === 'TL' ? styles.cornerTL : c === 'TR' ? styles.cornerTR : c === 'BL' ? styles.cornerBL : styles.cornerBR,
                   ]}
                 />
               ))}
@@ -546,11 +552,11 @@ export default function ReportScanScreen({ navigation }: any) {
                 </View>
               )}
               <View style={styles.infoSections}>
-                <InfoSection icon="🔍" title="Findings"        content={result.possible_conditions} />
-                <InfoSection icon="🥗" title="Diet Advice"     content={result.diet_advice} />
-                <InfoSection icon="🏃" title="Lifestyle"       content={result.lifestyle_advice} />
+                <InfoSection icon="🔍" title="Findings" content={result.possible_conditions} />
+                <InfoSection icon="🥗" title="Diet Advice" content={result.diet_advice} />
+                <InfoSection icon="🏃" title="Lifestyle" content={result.lifestyle_advice} />
                 <InfoSection icon="👨‍⚕️" title="Consult Doctor" content={result.specialist_to_see} />
-                <InfoSection icon="🗓" title="Next Test When"  content={result.follow_up_when} />
+                <InfoSection icon="🗓" title="Next Test When" content={result.follow_up_when} />
                 {result.urgent_action && (
                   <View style={styles.urgentBox}>
                     <Text style={styles.urgentTitle}>🚨 Urgent Action Required</Text>
@@ -589,7 +595,7 @@ const styles = StyleSheet.create({
   cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
   scanTooltip: { maxWidth: FRAME_W + 24, marginTop: spacing.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: borderRadius.sm, borderWidth: 1 },
   scanTooltipGood: { backgroundColor: 'rgba(34,197,94,0.18)', borderColor: 'rgba(34,197,94,0.65)' },
-  scanTooltipBad:  { backgroundColor: 'rgba(239,68,68,0.2)',  borderColor: 'rgba(239,68,68,0.7)' },
+  scanTooltipBad: { backgroundColor: 'rgba(239,68,68,0.2)', borderColor: 'rgba(239,68,68,0.7)' },
   scanTooltipText: { ...typography.caption, color: '#fff', textAlign: 'center' },
   overlayBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.55)', paddingBottom: 40, zIndex: 10 },
   controls: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: spacing.xl },

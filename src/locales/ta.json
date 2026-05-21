@@ -118,6 +118,8 @@
   "privacy": "தனியுரிமை",
   "data_local": "உங்கள் தகவல்கள் உங்கள் சாதனத்திலேயே இருக்கும்",
   "clear_data": "அனைத்து தரவுகளையும் அழி",
+  "clear_data_message": "இது உங்கள் அனைத்து மருந்துகளையும், அறிக்கைகளையும் மற்றும் சுயவிவரத்தையும் நீக்கும். இது மீட்க முடியாது.",
+  "clear_everything": "அனைத்தையும் அழிக்கவும்",
   "app_version": "பதிப்பு",
   "offline_cache": "ஏற்கனவே கண்டறியப்பட்டது",
   "refill_alert": "மருந்து தீர்ந்துவிட்டது: {{name}}",
@@ -191,7 +193,7 @@
   "view_full_list": "முழு பட்டியலைப் பார் →",
   "tool_scan_label": "மருந்தை அறிவோம்",
   "tool_report_label": "அறிக்கையை அறிவோம்",
-  "tool_chat_label": "MediSaaN AI சாட்",
+  "tool_chat_label": "MediSaaN AI",
   "tool_history_label": "மருந்து வரலாறு",
   "tool_scan_desc": "புகைப்படத்தின் மூலம் அறிதல்",
   "tool_report_desc": "AI ஆய்வு",
@@ -209,7 +211,7 @@
   "tool_my_medicines": "என்\nமருந்துகள்",
   "tool_scan_medicine": "மருந்து\nஸ்கேன்",
   "tool_report_analyze": "அறிக்கை\nஆய்வு",
-  "tool_chat_bot": "பாட்டுடன்\nஅரட்டை",
+  "tool_chat_bot": "MediSaaN AI",
   "perm_voice": "குரல் உதவியாளர்",
   "perm_voice_sub": "AI ஹெல்த் போட் குரல் தொடர்புகளுக்குப் பயன்படுத்தப்படுகிறது.",
   "perm_location": "இருப்பிட அணுகல்",
@@ -329,5 +331,5 @@
   "next_dose": "அடுத்த டோஸ்",
   "health_score": "ஆரோக்கிய மதிப்பெண்",
   "ai_powered": "AI இயங்குகிறது",
-  "voice_hint": "\"ஹே சாத்தி, என் அறிக்கையைப் படியுங்கள்\" என்று சொல்லிப் பாருங்கள்"
+  "voice_hint": "தொலைபேசியை சுழற்றவும் மற்றும் மருந்தை ஸ்கேன் செய்யவும்"
 }
